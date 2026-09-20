@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #453dff;
+  --color-brand-hover: #342ed4;
+  --color-brand-soft: #ecebff;
+  --color-ink: #111827;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+  --color-page: #ffffff;
+  --color-night: #0b0b12;
+  --color-night-card: #14141e;
+  --color-night-line: #2a2a36;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  background: #fff;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background: #0b0b12;
+  color: #f3f4f6;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: #453dff;
+  color: #fff;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+.prose-job h3 {
+  font-size: 1rem;
+  font-weight: 650;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.prose-job p,
+.prose-job li {
+  color: #374151;
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.prose-job ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+
+.prose-job a {
+  color: #453dff;
+  text-decoration: underline;
+}
+
+.prose-job strong {
+  font-weight: 650;
+  color: #111827;
+}
+
+.dark .prose-job p,
+.dark .prose-job li {
+  color: #d1d5db;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes logo-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.logo-ticker {
+  animation: logo-ticker 42s linear infinite;
+}
