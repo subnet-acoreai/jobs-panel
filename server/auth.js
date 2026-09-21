@@ -1,6 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
+import { loadEnv } from './env.js'
 
 loadEnv()
 
@@ -12,19 +13,6 @@ const USERS_FILE = path.join(process.cwd(), 'data', 'users.json')
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@cryptojobslist.local'
 export const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123'
-
-function loadEnv() {
-  try {
-    const raw = fs.readFileSync(path.join(process.cwd(), '.env'), 'utf8')
-    for (const line of raw.split('\n')) {
-      const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/)
-      if (!match || match[1].startsWith('#')) continue
-      if (process.env[match[1]] == null) process.env[match[1]] = match[2]
-    }
-  } catch {
-    // no .env file
-  }
-}
 
 function cookieValue(req, name) {
   const raw = req.headers.cookie || ''

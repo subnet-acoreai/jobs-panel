@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser'
 import { filterAndSortJobs } from '../shared/jobSearch.js'
-import { getNextJob, listNextJobs } from './cjlNext.js'
+import { getNextJob, listAllNextJobs, listNextJobs } from './cjlNext.js'
+import { getPublishedExtraBySlug, listPublishedExtraJobs } from './extraJobs.js'
 
 const API_BASE = 'https://api.cryptojobslist.com'
 const CACHE_MS = 5 * 60 * 1000
@@ -336,7 +337,7 @@ export function companiesFrom(jobs) {
       name: job.company,
       logo: job.logo,
       letter: job.company?.[0] || 'C',
-      color: '#453DFF',
+      color: '#0D9F7A',
       location: job.remote ? 'Remote' : job.location,
       tags: [],
       tagline: job.summary,
@@ -351,9 +352,110 @@ export function companiesFrom(jobs) {
   return [...map.values()].sort((a, b) => b.open - a.open)
 }
 
+function pageSize(params = {}) {
+  if (params.paginate === false) return 0
+  const raw = Number(params.limit)
+  return Math.min(50, Math.max(1, Number.isFinite(raw) && raw > 0 ? raw : 25))
+}
+
+function extraJobsFor(params = {}) {
+  return filterAndSortJobs(listPublishedExtraJobs(), {
+    ...params,
+    topic: params.topic || params.tag || '',
+  })
+}
+
+function prependExtras(jobs, extra) {
+  if (!extra.length) return jobs
+  const seen = new Set(extra.map((job) => job.slug))
+  return [...extra, ...jobs.filter((job) => !seen.has(job.slug))]
+}
+
+function paginateJobs(jobs, params = {}, meta = {}) {
+  const limit = pageSize(params)
+  const totalCount = jobs.length
+  if (!limit) {
+    return {
+      jobs,
+      meta: {
+        ...meta,
+        totalCount,
+        catalogSize: meta.catalogSize || totalCount,
+        page: 1,
+        totalPages: 1,
+        limit: totalCount || 25,
+      },
+    }
+  }
+  const totalPages = Math.max(1, Math.ceil(totalCount / limit))
+  const page = Math.min(totalPages, Math.max(1, Number(params.page || 1)))
+  const start = (page - 1) * limit
+  return {
+    jobs: jobs.slice(start, start + limit),
+    meta: {
+      ...meta,
+      totalCount,
+      catalogSize: meta.catalogSize || totalCount,
+      page,
+      totalPages,
+      limit,
+    },
+  }
+}
+
+function finalizeJobs(payload, params = {}) {
+  const extra = extraJobsFor(params)
+  const incoming = payload.jobs || []
+  const limit = pageSize(params)
+  const upstreamCount = Number(payload.meta?.totalCount || 0)
+  const upstreamPages = Number(payload.meta?.totalPages || 0)
+  const upstreamPaged =
+    Boolean(limit) &&
+    incoming.length <= limit &&
+    (upstreamCount > incoming.length || upstreamPages > 1)
+
+  if (upstreamPaged) {
+    const page = Math.max(1, Number(params.page || payload.meta?.page || 1))
+    const jobs = (page <= 1 ? prependExtras(incoming, extra) : incoming).slice(0, limit)
+    const totalCount = upstreamCount + extra.length
+    return {
+      ...payload,
+      jobs,
+      companies: companiesFrom(jobs),
+      meta: {
+        ...(payload.meta || {}),
+        totalCount,
+        page,
+        totalPages: Math.max(1, Math.ceil(totalCount / limit)),
+        limit,
+      },
+    }
+  }
+
+  const merged = prependExtras(incoming, extra)
+  const paged = paginateJobs(merged, params, payload.meta || {})
+  return {
+    ...payload,
+    ...paged,
+    companies: companiesFrom(limit ? merged : paged.jobs),
+  }
+}
+
 export async function listJobs(params = {}) {
   try {
-    return await listNextJobs(params)
+    const query = String(params.query || '').trim()
+    const wantsAll = params.paginate === false || Boolean(query)
+    const payload = wantsAll ? await listAllNextJobs(params) : await listNextJobs(params)
+    const jobs = wantsAll ? filterAndSortJobs(payload.jobs, params) : payload.jobs
+    return finalizeJobs(
+      {
+        ...payload,
+        jobs,
+        companies: companiesFrom(jobs),
+        meta: wantsAll ? { ...(payload.meta || {}), totalCount: jobs.length } : payload.meta,
+      },
+      params,
+    )
   } catch (error) {
     console.warn('[cjl] Next data API unavailable:', error.message)
   }
@@ -362,12 +464,12 @@ export async function listJobs(params = {}) {
     const json = await fetchJsonJobs(params)
     if (json) {
       const jobs = filterAndSortJobs(json.jobs, params)
-      return {
+      return finalizeJobs({
         ...json,
         jobs,
-        companies: companiesFrom(json.jobs),
+        companies: companiesFrom(jobs),
         meta: { ...(json.meta || {}), totalCount: jobs.length },
-      }
+      }, params)
     }
   } catch (error) {
     console.warn('[cjl] JSON API unavailable, using public RSS:', error.message)
@@ -375,16 +477,18 @@ export async function listJobs(params = {}) {
 
   const catalog = await fetchAllRss()
   const jobs = filterAndSortJobs(catalog, params)
-  return {
+  return finalizeJobs({
     jobs,
     companies: companiesFrom(catalog),
-    meta: { totalCount: jobs.length, catalogSize: catalog.length, page: 1, totalPages: 1 },
+    meta: { totalCount: jobs.length, catalogSize: catalog.length },
     source: 'rss',
     feed: 'merged',
-  }
+  }, params)
 }
 
 export async function getJob(slug) {
+  const extra = getPublishedExtraBySlug(slug)
+  if (extra) return extra
   try {
     const job = await getNextJob(slug)
     if (job) return job
@@ -399,7 +503,7 @@ export async function getJob(slug) {
 }
 
 export async function listCompanies() {
-  const { jobs, companies, source } = await listJobs()
+  const { jobs, companies, source } = await listJobs({ paginate: false })
   return { companies, totalJobs: jobs.length, source }
 }
 
@@ -447,7 +551,7 @@ export function createCjlMiddleware() {
       const companyMatch = path.match(/^\/api\/companies\/([^/]+)$/)
       if (companyMatch) {
         const slug = decodeURIComponent(companyMatch[1])
-        const { jobs } = await listJobs()
+        const { jobs } = await listJobs({ paginate: false })
         const companyJobs = jobs.filter((j) => j.companySlug === slug)
         const companies = companiesFrom(companyJobs)
         if (!companies[0]) return send(res, 404, { message: 'Company not found' })

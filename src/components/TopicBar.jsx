@@ -3,26 +3,28 @@ import { topics } from '../data/topics'
 
 export default function TopicBar({ active, onSelect }) {
   const [more, setMore] = useState(false)
-  const visible = more ? topics : topics.slice(0, 18)
+  const visible = more ? topics : topics.slice(0, 14)
 
   return (
-    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[13px] text-gray-500">
-      {visible.map((topic, i) => (
-        <span key={topic.id} className="inline-flex items-center">
-          {i > 0 && <span className="mr-1.5 text-gray-300">·</span>}
-          <button
-            type="button"
-            onClick={() => onSelect(topic.id === active ? 'for-you' : topic.id)}
-            className={`hover:text-ink dark:hover:text-white ${active === topic.id ? 'font-semibold text-ink dark:text-white' : ''}`}
-          >
-            {topic.sparkle ? <span className="mr-1">✦</span> : null}
-            {topic.label}
-          </button>
-        </span>
+    <div className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-1 no-scrollbar sm:flex-wrap">
+      {visible.map((topic) => (
+        <button
+          key={topic.id}
+          type="button"
+          onClick={() => onSelect(topic.id === active ? 'for-you' : topic.id)}
+          className={`min-h-9 shrink-0 rounded-full px-3 py-1.5 text-[12px] ${
+            active === topic.id
+              ? 'bg-ink font-semibold text-white dark:bg-accent dark:text-ink'
+              : 'bg-page text-muted hover:text-ink dark:bg-night dark:hover:text-white'
+          }`}
+        >
+          {topic.sparkle ? '✦ ' : ''}
+          {topic.label}
+        </button>
       ))}
-      {topics.length > 18 && (
-        <button type="button" onClick={() => setMore((v) => !v)} className="ml-1 text-gray-400 hover:text-ink">
-          {more ? 'Show less' : 'Show more'}
+      {topics.length > 14 && (
+        <button type="button" onClick={() => setMore((v) => !v)} className="shrink-0 px-2 text-[12px] text-muted hover:text-ink">
+          {more ? 'Less' : 'More'}
         </button>
       )}
     </div>

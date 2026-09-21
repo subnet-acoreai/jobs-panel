@@ -34,10 +34,10 @@ export default function Salaries() {
   const rows = useMemo(() => data?.roles || [], [data])
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-8">
-      <h1 className="text-3xl font-extrabold tracking-tight">Crypto & Web3 Salaries</h1>
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-5 sm:py-8">
+      <h1 className="text-[26px] font-extrabold tracking-tight sm:text-3xl">Crypto & Web3 Salaries</h1>
       <p className="mt-2 text-sm text-gray-500">
-        Benchmark against CryptoJobsList community reports and live listings from their jobs feed. Figures in USD, cash-only.
+        Benchmark against community reports and live listings. Figures in USD, cash-only.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -56,7 +56,7 @@ export default function Salaries() {
 
       <form onSubmit={calculate} className="mt-8 rounded-2xl border border-gray-200 p-5 dark:border-night-line">
         <h2 className="text-lg font-bold">Salary calculator</h2>
-        <p className="mt-1 text-sm text-gray-500">Uses CryptoJobsList published role bands, adjusted for experience and location.</p>
+        <p className="mt-1 text-sm text-gray-500">Uses published role bands, adjusted for experience and location.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="text-sm">
             <span className="text-gray-500">Role</span>
@@ -98,7 +98,8 @@ export default function Salaries() {
 
       <h2 className="mt-10 text-lg font-bold">Annual Web3 salaries for key roles</h2>
       {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
-      <div className="mt-4 overflow-hidden rounded-xl border border-gray-200 dark:border-night-line">
+      <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200 dark:border-night-line">
+        <div className="min-w-[520px]">
         <div className="grid grid-cols-4 bg-gray-50 px-4 py-2 text-xs font-semibold text-gray-500 dark:bg-white/5">
           <span>Role</span>
           <span>Mean</span>
@@ -113,10 +114,11 @@ export default function Salaries() {
             <span className="text-gray-500">{usd(row.p90)}</span>
           </div>
         ))}
+        </div>
       </div>
       {live?.listings ? (
         <p className="mt-3 text-xs text-gray-400">
-          Live listing average from {live.listings} paid jobs in the current CryptoJobsList feed: {usd(live.mean)}.
+          Live listing average from {live.listings} paid jobs in the current feed: {usd(live.mean)}.
         </p>
       ) : null}
 
@@ -128,7 +130,7 @@ export default function Salaries() {
         }}
       >
         <h2 className="text-lg font-bold">Add your salary</h2>
-        <p className="mt-1 text-sm text-gray-500">Anonymous. On CryptoJobsList, community review unlocks individual reports.</p>
+        <p className="mt-1 text-sm text-gray-500">Anonymous. Community review unlocks individual reports.</p>
         {submitted ? (
           <p className="mt-4 text-sm text-brand">Saved locally for this demo. Individual $XXX reports stay gated on the official site.</p>
         ) : (

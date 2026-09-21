@@ -14,12 +14,17 @@ import {
   signupUser,
 } from './auth.js'
 import { companiesFrom, getJob, listCompanies, listJobs } from './cjlApi.js'
+import { listAllNextJobs } from './cjlNext.js'
+import { extraJobsRouter } from './extraJobs.js'
+import { telegramConfigured } from './telegram.js'
+import { visitsRouter } from './visits.js'
 import { events, layoffs, posts, researchReports, talent, talentMeta } from './cjlPublic.js'
 import { estimateSalary, getHiringTrends, getSalaryReport } from './insights.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT || 3001)
 const app = express()
+app.set('trust proxy', 1)
 
 app.use(
   cors({
@@ -135,7 +140,7 @@ app.get('/api/companies', async (_req, res) => {
 
 app.get('/api/companies/:slug', async (req, res) => {
   try {
-    const { jobs } = await listJobs()
+    const { jobs } = await listJobs({ paginate: false })
     const companyJobs = jobs.filter((job) => job.companySlug === req.params.slug)
     const companies = companiesFrom(companyJobs)
     if (!companies[0]) return res.status(404).json({ message: 'Company not found' })
@@ -145,7 +150,9 @@ app.get('/api/companies/:slug', async (req, res) => {
   }
 })
 
+app.use('/api/visits', visitsRouter)
 app.use('/api/applications', applicationsRouter)
+app.use('/api/admin/jobs', extraJobsRouter)
 
 const LISTINGS_FILE = path.join(process.cwd(), 'data', 'listings.json')
 
@@ -281,4 +288,9 @@ if (process.env.NODE_ENV === 'production') {
 
 app.listen(PORT, () => {
   console.log(`[server] listening on http://127.0.0.1:${PORT}`)
+  if (telegramConfigured()) console.log('[telegram] visit alerts enabled')
+  else console.log('[telegram] visit alerts off — set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env')
+  listAllNextJobs().catch((error) => {
+    console.warn('[cjl] catalog warm failed:', error.message)
+  })
 })

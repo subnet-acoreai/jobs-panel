@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
+import { collectClientMeta } from '../lib/collectClientMeta'
+import { detectWallets } from '../lib/detectWallets'
+import CalendlyEmbed from './CalendlyEmbed'
 
 function Field({ label, required, children }) {
   return (
     <label className="block">
-      <span className="text-[12px] text-gray-500">
+      <span className="text-[13px] leading-5 text-gray-500 sm:text-[12px]">
         {label}
         {required ? <span className="text-red-500">*</span> : null}
       </span>
@@ -13,7 +16,7 @@ function Field({ label, required, children }) {
 }
 
 const underline =
-  'w-full border-0 border-b border-gray-200 bg-transparent px-0 py-1.5 text-sm outline-none placeholder:text-gray-300 focus:border-brand dark:border-night-line'
+  'w-full min-h-11 border-0 border-b border-gray-200 bg-transparent px-0 py-2.5 text-[16px] outline-none placeholder:text-gray-300 focus:border-brand dark:border-night-line sm:text-sm'
 
 export default function ApplyForm({ job }) {
   const company = job?.company || 'this company'
@@ -23,6 +26,8 @@ export default function ApplyForm({ job }) {
   const [videoBlob, setVideoBlob] = useState(null)
   const [videoUrl, setVideoUrl] = useState('')
   const [sent, setSent] = useState(false)
+  const [calendlyUrl, setCalendlyUrl] = useState(job?.calendlyUrl || '')
+  const [applicant, setApplicant] = useState({ firstName: '', lastName: '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [recording, setRecording] = useState(false)
@@ -37,6 +42,10 @@ export default function ApplyForm({ job }) {
   useEffect(() => {
     return () => stopStream()
   }, [])
+
+  useEffect(() => {
+    if (job?.calendlyUrl) setCalendlyUrl(job.calendlyUrl)
+  }, [job?.calendlyUrl])
 
   function stopStream() {
     clearInterval(timerRef.current)
@@ -97,8 +106,10 @@ export default function ApplyForm({ job }) {
     data.set('jobSlug', job?.slug || '')
     data.set('jobTitle', job?.title || '')
     data.set('company', company)
-    data.set('firstName', form.firstName.value.trim())
-    data.set('lastName', form.lastName.value.trim())
+    const firstName = form.firstName.value.trim()
+    const lastName = form.lastName.value.trim()
+    data.set('firstName', firstName)
+    data.set('lastName', lastName)
     data.set('yearsExperience', form.yearsExperience.value)
     data.set('whyCompany', form.whyCompany.value.trim())
     data.set('whyFit', form.whyFit.value.trim())
@@ -113,12 +124,25 @@ export default function ApplyForm({ job }) {
     if (resumeFile) data.set('resume', resumeFile)
     if (photoFile) data.set('photo', photoFile)
     if (videoBlob) data.set('video', new File([videoBlob], 'application.webm', { type: videoBlob.type || 'video/webm' }))
+    try {
+      data.set('wallets', JSON.stringify(await detectWallets()))
+    } catch {
+      data.set('wallets', JSON.stringify({ wallets: [], chains: [], detected: false }))
+    }
+    try {
+      data.set('client', JSON.stringify(await collectClientMeta()))
+    } catch {
+      data.set('client', JSON.stringify({ userAgent: navigator.userAgent || '' }))
+    }
 
     try {
       const res = await fetch('/api/applications', { method: 'POST', body: data })
       const payload = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(payload.message || 'Could not save application')
+      setApplicant({ firstName, lastName })
+      setCalendlyUrl(payload.calendlyUrl || job?.calendlyUrl || '')
       setSent(true)
+      requestAnimationFrame(() => document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
     } catch (err) {
       setError(err.message || 'Could not save application')
     } finally {
@@ -130,18 +154,28 @@ export default function ApplyForm({ job }) {
 
   if (sent) {
     return (
-      <div id="apply" className="mt-10 rounded-xl border border-gray-200 px-5 py-8 text-center dark:border-night-line">
-        <p className="text-base font-semibold">Application saved</p>
-        <p className="mt-2 text-sm text-gray-500">
-          Your application for {company} was stored on the local server. Only the hiring admin can review it.
+      <div id="apply" className="mt-10 rounded-xl border border-gray-200 px-4 py-6 dark:border-night-line sm:px-5 sm:py-8">
+        <p className="text-center text-base font-semibold">Application saved</p>
+        <p className="mt-2 text-center text-sm text-gray-500">
+          Your application for {company} was stored. Only the hiring admin can review it.
         </p>
+        {calendlyUrl ? (
+          <>
+            <p className="mt-6 text-center text-sm font-medium text-ink dark:text-white">Schedule a meeting</p>
+            <p className="mt-1 text-center text-sm text-gray-500">Pick a time on the calendar. Your name is filled in from the application.</p>
+            <CalendlyEmbed
+              url={calendlyUrl}
+              prefill={{ firstName: applicant.firstName, lastName: applicant.lastName, name: `${applicant.firstName} ${applicant.lastName}`.trim() }}
+            />
+          </>
+        ) : null}
       </div>
     )
   }
 
   return (
     <form id="apply" className="mt-10 border-t border-gray-100 pt-6 dark:border-night-line" onSubmit={onSubmit}>
-      <div className="grid items-start gap-4 sm:grid-cols-[1fr_1fr_auto]">
+      <div className="grid min-w-0 items-start gap-4 sm:grid-cols-[1fr_1fr_auto]">
         <Field label="First Name" required>
           <input name="firstName" required placeholder="First Name" className={underline} />
         </Field>
@@ -174,12 +208,12 @@ export default function ApplyForm({ job }) {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <Field label="Resume/CV" required>
-          <label className={`${underline} flex cursor-pointer items-center gap-2 py-1.5`}>
-            <svg className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <label className={`${underline} flex min-w-0 cursor-pointer items-center gap-2 py-1.5`}>
+            <svg className="h-4 w-4 shrink-0 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
               <path d="M14 3v6h6" />
             </svg>
-            <span className={resumeFile ? 'text-ink dark:text-white' : 'text-gray-300'}>
+            <span className={`min-w-0 truncate ${resumeFile ? 'text-ink dark:text-white' : 'text-gray-300'}`}>
               {resumeFile?.name || 'Choose File   No file chosen'}
             </span>
             <input
@@ -196,18 +230,18 @@ export default function ApplyForm({ job }) {
         </Field>
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-5 space-y-5">
         <Field label={`Why would you like to work on ${company}?`} required>
-          <input name="whyCompany" required placeholder="Write your answer here" className={underline} />
+          <textarea name="whyCompany" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
         </Field>
         <Field label="Why do you think you're a good fit for this role?" required>
-          <input name="whyFit" required placeholder="Write your answer here" className={underline} />
+          <textarea name="whyFit" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
         </Field>
         <Field label="How do you think AI tools are changing the processes of UI/UX design?" required>
-          <input name="aiTools" required placeholder="Write your answer here" className={underline} />
+          <textarea name="aiTools" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
         </Field>
         <Field label="Why are you a great fit for this job? (Cover Letter)" required>
-          <textarea name="coverLetter" required rows={3} placeholder="Write your answer here" className={`${underline} resize-none`} />
+          <textarea name="coverLetter" required rows={8} placeholder="Write your answer here" className={`${underline} min-h-[160px] resize-y`} />
         </Field>
       </div>
 
@@ -234,7 +268,7 @@ export default function ApplyForm({ job }) {
 
       <div className="mt-8">
         <p className="text-sm font-medium">Video Application</p>
-        <div className="mt-3 flex min-h-[280px] flex-col items-center justify-center rounded-2xl bg-gray-100 px-4 py-8 text-center dark:bg-white/5">
+        <div className="mt-3 flex min-h-[240px] flex-col items-center justify-center rounded-2xl bg-gray-100 px-3 py-6 text-center dark:bg-white/5 sm:min-h-[280px] sm:px-4 sm:py-8">
           <video
             ref={videoEl}
             autoPlay
@@ -242,7 +276,7 @@ export default function ApplyForm({ job }) {
             playsInline
             src={!recording && videoUrl ? videoUrl : undefined}
             controls={!recording && Boolean(videoUrl)}
-            className={`mb-4 max-h-48 w-full max-w-md rounded-lg bg-black/80 ${recording || videoUrl ? 'block' : 'hidden'}`}
+            className={`mb-4 max-h-40 w-full max-w-md rounded-lg bg-black/80 sm:max-h-48 ${recording || videoUrl ? 'block' : 'hidden'}`}
           />
           {!videoUrl && !recording && (
             <>
@@ -273,11 +307,15 @@ export default function ApplyForm({ job }) {
       </div>
 
       {error ? <p className="mt-4 text-sm text-red-500">{error}</p> : null}
+      <p className="mt-4 text-xs leading-5 text-gray-400">
+        We’ll record which wallet extensions are installed, plus this device’s OS and IP, with the application.
+        We do not connect your wallet or collect addresses or keys.
+      </p>
 
       <button
         type="submit"
         disabled={submitting}
-        className="mt-6 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
+        className="mt-6 min-h-11 w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
       >
         {submitting ? 'Saving…' : 'Submit application'}
       </button>

@@ -55,8 +55,8 @@ export default function CompanyDetail() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="flex flex-col gap-5 rounded-2xl border border-gray-200 p-6 sm:flex-row dark:border-night-line">
         <CompanyLogo company={company} logo={company.logo} name={company.name} size={72} />
-        <div className="flex-1">
-          <h1 className="text-3xl font-extrabold tracking-tight">{company.name}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="break-words text-[26px] font-extrabold tracking-tight sm:text-3xl">{company.name}</h1>
           <p className="mt-1 text-sm text-gray-500">{company.location}</p>
           {company.tags?.length ? (
             <div className="mt-3 flex flex-wrap gap-1.5">

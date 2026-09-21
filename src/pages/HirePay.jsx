@@ -97,11 +97,11 @@ export default function HirePay() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-5 sm:py-10">
       <button type="button" onClick={() => navigate('/hire')} className="text-sm text-gray-500 hover:text-ink">
         ← Edit listing
       </button>
-      <h1 className="mt-3 text-3xl font-extrabold tracking-tight">Pay with crypto</h1>
+      <h1 className="mt-3 text-[26px] font-extrabold tracking-tight sm:text-3xl">Pay with crypto</h1>
       <p className="mt-2 text-sm text-gray-500">
         {draft.title} at {draft.company} · ${LISTING_PRICE} USD for a 30-day listing. Choose a chain, send the amount, then confirm.
       </p>
@@ -140,7 +140,7 @@ export default function HirePay() {
           }}
           aria-hidden="true"
         />
-        <p className="mt-4 break-all rounded-lg bg-gray-50 px-3 py-3 font-mono text-[13px] dark:bg-white/5">{chain.address}</p>
+        <p className="mt-4 break-all rounded-lg bg-gray-50 px-3 py-3 font-mono text-[12px] sm:text-[13px] dark:bg-white/5">{chain.address}</p>
         <button type="button" onClick={copyAddress} className="mt-3 text-sm font-semibold text-brand">
           {copied ? 'Copied' : 'Copy address'}
         </button>
@@ -152,7 +152,7 @@ export default function HirePay() {
         type="button"
         disabled={busy}
         onClick={confirmPaid}
-        className="mt-6 w-full rounded-lg bg-brand py-3 text-sm font-semibold text-white disabled:opacity-60"
+        className="mt-6 min-h-11 w-full rounded-full bg-brand py-3 text-sm font-semibold text-white disabled:opacity-60"
       >
         {busy ? 'Saving…' : `I've paid with ${chain.name}`}
       </button>

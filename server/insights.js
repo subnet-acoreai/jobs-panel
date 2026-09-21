@@ -48,7 +48,7 @@ function statsFor(values) {
 }
 
 export async function getSalaryReport() {
-  const { jobs, meta } = await listJobs()
+  const { jobs, meta } = await listJobs({ paginate: false })
   const paid = jobs.map((job) => ({ job, annual: toAnnual(job) })).filter((row) => row.annual >= 15000 && row.annual <= 500000)
   const live = statsFor(paid.map((row) => row.annual))
   const byRole = salaryBands.map((band) => {
@@ -89,7 +89,7 @@ export function estimateSalary({ role = 'Developer', experience = 3, location = 
 }
 
 export async function getHiringTrends() {
-  const { jobs, companies, meta } = await listJobs()
+  const { jobs, companies, meta } = await listJobs({ paginate: false })
   const titles = new Map()
   const skills = new Map()
   const locations = new Map()

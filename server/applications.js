@@ -3,7 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import multer from 'multer'
 import { requireAdmin } from './auth.js'
+import { getExtraCalendly } from './extraJobs.js'
 import { createApplication, getApplication, listApplications } from './store.js'
+import { sanitizeClientMeta } from '../shared/clientMeta.js'
+import { sanitizeWalletSnapshot } from '../shared/wallets.js'
 
 const uploadDir = path.join(process.cwd(), 'data', 'uploads')
 fs.mkdirSync(uploadDir, { recursive: true })
@@ -122,6 +125,7 @@ applicationsRouter.post(
     }
 
     try {
+      const calendlyUrl = getExtraCalendly(String(body.jobSlug || '').trim())
       const application = await createApplication({
         jobSlug: String(body.jobSlug || '').trim(),
         jobTitle: String(body.jobTitle || '').trim(),
@@ -139,9 +143,12 @@ applicationsRouter.post(
         currentSalary: String(body.currentSalary).trim(),
         phone: String(body.phone || '').trim(),
         location: String(body.location || '').trim(),
+        wallets: sanitizeWalletSnapshot(body.wallets),
+        client: sanitizeClientMeta(body.client, req),
+        calendlyUrl,
         files,
       })
-      res.status(201).json({ application })
+      res.status(201).json({ application, calendlyUrl })
     } catch (error) {
       next(error)
     }

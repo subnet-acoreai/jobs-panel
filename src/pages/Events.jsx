@@ -26,14 +26,10 @@ export default function Events() {
   }, [data])
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-8">
-      <h1 className="text-3xl font-extrabold tracking-tight">Crypto Events in 2026</h1>
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-5 sm:py-8">
+      <h1 className="text-[26px] font-extrabold tracking-tight sm:text-3xl">Crypto Events in 2026</h1>
       <p className="mt-2 text-sm text-gray-500">
-        Web3 events, expos, conferences and hackathons listed on{' '}
-        <a className="text-brand" href="https://cryptojobslist.com/crypto-events" target="_blank" rel="noreferrer">
-          CryptoJobsList
-        </a>
-        .
+        Conferences and hackathons tracked for Web3 teams.
       </p>
       {loading ? <p className="mt-8 text-sm text-gray-400">Loading events…</p> : null}
       {error ? <p className="mt-8 text-sm text-red-500">{error}</p> : null}

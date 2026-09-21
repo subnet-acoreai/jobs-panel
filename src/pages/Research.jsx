@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { BRAND_NAME } from '../components/Brand'
 import { useApi } from '../lib/useApi'
 
 export default function Research() {
@@ -8,8 +9,8 @@ export default function Research() {
   const featured = reports.find((r) => r.featured) || reports[0]
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-8">
-      <h1 className="text-3xl font-extrabold tracking-tight">CryptoJobsList Research</h1>
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-5 sm:py-8">
+      <h1 className="text-[26px] font-extrabold tracking-tight sm:text-3xl">{BRAND_NAME} Research</h1>
       <p className="mt-2 text-sm text-gray-500">
         Workforce data on salary premiums, hiring hubs, and tooling — sourced from the job board.
       </p>
@@ -22,13 +23,13 @@ export default function Research() {
           className="mt-8 block rounded-2xl border border-gray-200 p-6 hover:border-brand/40 dark:border-night-line"
         >
           <p className="text-xs font-semibold uppercase tracking-wide text-brand">Featured Report · {featured.date}</p>
-          <h2 className="mt-2 text-2xl font-bold">{featured.title}</h2>
+          <h2 className="mt-2 text-xl font-bold sm:text-2xl">{featured.title}</h2>
           <p className="mt-3 text-sm leading-7 text-gray-500">{featured.summary}</p>
         </a>
       ) : null}
 
       <h2 className="mt-10 text-lg font-bold">Web3 Hiring Trends</h2>
-      <p className="mt-1 text-sm text-gray-500">Live from the CryptoJobsList jobs feed.</p>
+      <p className="mt-1 text-sm text-gray-500">Live from the {BRAND_NAME} jobs feed.</p>
       {loading ? <p className="mt-4 text-sm text-gray-400">Loading trends…</p> : null}
       {error ? <p className="mt-4 text-sm text-red-500">{error}</p> : null}
       {trends ? (

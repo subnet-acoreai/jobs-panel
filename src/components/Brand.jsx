@@ -1,24 +1,32 @@
 import { useEffect, useState } from 'react'
 
+export const BRAND_NAME = 'Web3Hire'
+
 export function Logo({ className = 'h-8 w-8' }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <circle cx="16" cy="16" r="16" fill="#453DFF" />
+      <rect width="32" height="32" rx="9" fill="#0D9F7A" />
       <path
-        d="M22.15 10.2a7.35 7.35 0 1 0 .2 11.55"
-        stroke="#fff"
-        strokeWidth="4.7"
-        strokeLinecap="round"
+        d="M6.2 9.2h3.55l2.55 11.1h.16L16 9.2h3.2l3.45 11.1h.16l2.55-11.1H29L24.15 22.8h-3.7L16.6 11.6h-.2L12.9 22.8H9.2L4.4 9.2h1.8z"
+        fill="#D4F562"
       />
     </svg>
   )
 }
 
+export function BrandWordmark({ className = '', accentClassName = 'text-brand' }) {
+  return (
+    <span className={`whitespace-nowrap ${className}`}>
+      Web3<span className={accentClassName}>Hire</span>
+    </span>
+  )
+}
+
 export const socials = [
-  { name: 'X', href: 'https://x.com/CryptoJobsList', icon: IconX },
-  { name: 'Telegram', href: 'https://t.me/CryptoJobsList', icon: IconTelegram },
-  { name: 'LinkedIn', href: 'https://www.linkedin.com/company/cryptojobslist', icon: IconLinkedIn },
-  { name: 'GitHub', href: 'https://github.com/cryptojobslist', icon: IconGitHub },
+  { name: 'X', href: '/about', icon: IconX },
+  { name: 'Telegram', href: '/about', icon: IconTelegram },
+  { name: 'LinkedIn', href: '/about', icon: IconLinkedIn },
+  { name: 'GitHub', href: '/about', icon: IconGitHub },
 ]
 
 function IconX() {
@@ -63,7 +71,7 @@ export function SocialLinks({ className = '' }) {
           target="_blank"
           rel="noreferrer"
           aria-label={name}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-brand-soft hover:text-brand dark:bg-white/10 dark:text-gray-300 dark:hover:bg-brand/20 dark:hover:text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-soft text-brand transition hover:bg-brand hover:text-white dark:bg-white/10 dark:text-gray-300 dark:hover:bg-brand dark:hover:text-white"
         >
           <Icon />
         </a>
@@ -107,7 +115,7 @@ export function CompanyLogo({ company, logo, name, size = 40 }) {
         alt=""
         width={size}
         height={size}
-        className="shrink-0 rounded-lg bg-white object-contain ring-1 ring-black/5"
+        className="shrink-0 rounded-2xl bg-white object-contain ring-1 ring-black/5"
         style={{ width: size, height: size }}
         onError={() => setFailed(true)}
       />
@@ -115,11 +123,11 @@ export function CompanyLogo({ company, logo, name, size = 40 }) {
   }
   return (
     <div
-      className="flex shrink-0 items-center justify-center rounded-lg font-semibold text-white shadow-sm ring-1 ring-black/5"
+      className="flex shrink-0 items-center justify-center rounded-2xl font-semibold text-white shadow-sm ring-1 ring-black/5"
       style={{
         width: size,
         height: size,
-        background: company?.color || '#453DFF',
+        background: company?.color || '#0D9F7A',
         fontSize: size * 0.42,
       }}
       aria-hidden="true"

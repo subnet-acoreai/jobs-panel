@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CompanyLogo, Tag } from '../components/Brand'
+import { BRAND_NAME, CompanyLogo, Tag } from '../components/Brand'
 import ApplyForm from '../components/ApplyForm'
+import CopyJobButton from '../components/CopyJobButton'
 import JobRow from '../components/JobRow'
 import { useApp } from '../context/AppContext'
 import { useJobs } from '../context/JobsContext'
@@ -63,18 +64,18 @@ export default function JobDetail() {
   const paragraphs = Array.isArray(job.description) ? job.description : []
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[1fr_300px]">
-      <article>
+    <div className="mx-auto grid min-w-0 max-w-6xl gap-8 px-4 py-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <article className="min-w-0">
         <p className="text-xs text-gray-400">
           <Link to="/" className="hover:text-brand">
             Jobs
           </Link>{' '}
           / {job.company}
         </p>
-        <div className="mt-4 flex items-start gap-4">
-          <CompanyLogo logo={job.logo} name={job.company} size={56} />
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">{job.title}</h1>
+        <div className="mt-4 flex min-w-0 items-start gap-3 sm:gap-4">
+          <CompanyLogo logo={job.logo} name={job.company} size={48} />
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words text-[26px] font-extrabold tracking-tight sm:text-3xl">{job.title}</h1>
             <p className="mt-1 text-sm text-gray-500">
               at{' '}
               <Link to={`/companies/${job.companySlug}`} className="font-medium text-brand">
@@ -96,20 +97,21 @@ export default function JobDetail() {
         <div className="mt-6 flex flex-wrap gap-2">
           <a
             href="#apply"
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
+            className="inline-flex min-h-11 items-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-hover"
           >
             Apply
           </a>
           <button
             type="button"
             onClick={() => toggleBookmark(job.id)}
-            className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium dark:border-night-line"
+            className="min-h-11 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium dark:border-night-line"
           >
             {saved ? 'Saved' : 'Save for later'}
           </button>
+          <CopyJobButton job={job} />
         </div>
         <p className="mt-4 text-xs text-gray-400">
-          Apply on CryptoJobsList · {job.company}
+          Apply via {BRAND_NAME} · {job.company}
           {job.postedOn ? ` · ${job.postedOn}` : ''}
         </p>
 
@@ -142,9 +144,9 @@ export default function JobDetail() {
         <div className="rounded-2xl border border-gray-200 p-5 dark:border-night-line">
           <div className="flex items-center gap-3">
             <CompanyLogo logo={job.logo} name={job.company} />
-            <div>
-              <p className="font-semibold">{job.company}</p>
-              <p className="text-xs text-gray-500">{job.remote ? 'Remote' : job.location}</p>
+            <div className="min-w-0">
+              <p className="truncate font-semibold">{job.company}</p>
+              <p className="truncate text-xs text-gray-500">{job.remote ? 'Remote' : job.location}</p>
             </div>
           </div>
           <p className="mt-3 text-sm leading-6 text-gray-500">{job.summary}</p>

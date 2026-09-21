@@ -1,6 +1,9 @@
 const SITE = 'https://cryptojobslist.com'
-const DEFAULT_BUILD = process.env.CJL_NEXT_BUILD_ID || 'VS6C8KB7ZtfJDOcRGygjO'
-const CACHE_MS = 2 * 60 * 1000
+const DEFAULT_BUILD = process.env.CJL_NEXT_BUILD_ID || 'OL5siGC5aCOVJqUWUUDLV'
+const CACHE_MS = 3 * 60 * 1000
+const CATALOG_CACHE_MS = 5 * 60 * 1000
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 const SKIP_TAGS = new Set([
   'web3',
   'jobs',
@@ -14,6 +17,7 @@ const cache = new Map()
 const jobIndex = new Map()
 let buildId = DEFAULT_BUILD
 let buildAt = 0
+let catalogPromise = null
 
 function prettyTag(slug) {
   const special = {
@@ -108,7 +112,36 @@ async function parseMaybeJson(text) {
   const trimmed = String(text || '').trim()
   if (!trimmed) throw new Error('Empty response')
   if (trimmed.startsWith('{') || trimmed.startsWith('[')) return JSON.parse(trimmed)
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (fence?.[1]) {
+    const inner = fence[1].trim()
+    if (inner.startsWith('{') || inner.startsWith('[')) return JSON.parse(inner)
+  }
+  const start = trimmed.indexOf('{')
+  const end = trimmed.lastIndexOf('}')
+  if (start >= 0 && end > start) {
+    try {
+      return JSON.parse(trimmed.slice(start, end + 1))
+    } catch {
+      // fall through
+    }
+  }
   throw new Error('Not JSON')
+}
+
+function unwrapPayload(payload) {
+  if (payload?.props?.pageProps) return payload.props.pageProps
+  if (payload?.pageProps) return payload.pageProps
+  return payload
+}
+
+function extractNextData(html) {
+  const idx = String(html || '').indexOf('__NEXT_DATA__')
+  if (idx < 0) throw new Error('No NEXT_DATA')
+  const start = html.indexOf('{', idx)
+  const end = html.indexOf('</script>', start)
+  if (start < 0 || end < 0) throw new Error('NEXT_DATA truncated')
+  return JSON.parse(html.slice(start, end))
 }
 
 async function fetchDirect(url) {
@@ -116,13 +149,14 @@ async function fetchDirect(url) {
     headers: {
       Accept: 'application/json',
       'x-nextjs-data': '1',
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+      'User-Agent': BROWSER_UA,
       Referer: `${SITE}/`,
     },
   })
+  const text = await res.text()
   if (!res.ok) throw new Error(`Next data ${res.status}`)
-  return res.json()
+  if (text.trim().startsWith('<')) throw new Error('Next data HTML challenge')
+  return JSON.parse(text)
 }
 
 async function fetchViaJina(url) {
@@ -135,32 +169,81 @@ async function fetchViaJina(url) {
   return parseMaybeJson(content)
 }
 
-async function fetchNextJson(url) {
-  const cached = cache.get(url)
+async function fetchViaTranslate(url) {
+  const target = `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(url)}`
+  const res = await fetch(target, {
+    headers: {
+      Accept: 'text/html,application/xhtml+xml',
+      'User-Agent': BROWSER_UA,
+      Referer: 'https://translate.google.com/',
+    },
+    signal: AbortSignal.timeout(25000),
+  })
+  if (!res.ok) throw new Error(`Translate ${res.status}`)
+  return extractNextData(await res.text())
+}
+
+function pageUrl(params = {}) {
+  const tag = String(params.tag || params.category || params.topic || '').replace(/^\//, '')
+  const location = slugify(params.location)
+  const hasTag = Boolean(tag && !['for-you', 'web3', 'all'].includes(tag))
+  const remote = Boolean(params.remote) && !hasTag
+  const search = new URLSearchParams()
+  const page = Math.max(1, Number(params.page || 1))
+  if (page > 1) search.set('page', String(page))
+  if (hasTag || remote || location) {
+    const tagPart = remote ? 'remote' : hasTag ? tag : 'all'
+    const locPart = location || 'all'
+    const qs = search.toString()
+    return `${SITE}/tags/${encodeURIComponent(tagPart)}/${encodeURIComponent(locPart)}${qs ? `?${qs}` : ''}`
+  }
+  const qs = search.toString()
+  return `${SITE}/${qs ? `?${qs}` : ''}`
+}
+
+async function fetchNextPayload(params = {}) {
+  const html = pageUrl(params)
+  const cached = cache.get(html)
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.data
+  const id = await resolveBuildId()
+  const jsonUrl = `${SITE}/_next/data/${id}/${nextRoute({ ...params, query: '' })}`
   let data
   try {
-    data = await fetchDirect(url)
+    data = unwrapPayload(await fetchDirect(jsonUrl))
   } catch {
-    data = await fetchViaJina(url)
+    try {
+      data = unwrapPayload(await fetchViaJina(jsonUrl))
+    } catch {
+      data = unwrapPayload(await fetchViaTranslate(html))
+    }
   }
-  if (!data?.notFound) cache.set(url, { at: Date.now(), data })
+  if (data?.notFound) throw new Error('Next page not found')
+  cache.set(html, { at: Date.now(), data })
   return data
 }
 
 export async function resolveBuildId() {
   if (buildId && Date.now() - buildAt < 60 * 60 * 1000) return buildId
   try {
-    const html = await fetchViaJina(SITE)
-    const blob = typeof html === 'string' ? html : JSON.stringify(html)
-    const match = blob.match(/\/_next\/data\/([A-Za-z0-9_-]+)\//) || blob.match(/"buildId":"([^"]+)"/)
-    if (match?.[1]) {
-      buildId = match[1]
+    const data = await fetchViaTranslate(SITE)
+    if (data.buildId) {
+      buildId = data.buildId
       buildAt = Date.now()
       return buildId
     }
   } catch {
-    // keep previous
+    try {
+      const html = await fetchViaJina(SITE)
+      const blob = typeof html === 'string' ? html : JSON.stringify(html)
+      const match = blob.match(/\/_next\/data\/([A-Za-z0-9_-]+)\//) || blob.match(/"buildId":"([^"]+)"/)
+      if (match?.[1]) {
+        buildId = match[1]
+        buildAt = Date.now()
+        return buildId
+      }
+    } catch {
+      // keep previous
+    }
   }
   buildAt = Date.now()
   return buildId
@@ -196,18 +279,7 @@ function nextRoute(params = {}) {
   return `index.json?${search.toString()}`
 }
 
-export async function listNextJobs(params = {}) {
-  const id = await resolveBuildId()
-  const page = Math.max(1, Number(params.page || 1))
-  const url = `${SITE}/_next/data/${id}/${nextRoute(params)}`
-  let payload = await fetchNextJson(url)
-  if (payload?.notFound) {
-    cache.delete(url)
-    const search = new URLSearchParams({ page: String(page) })
-    if (params.query) search.set('q', params.query)
-    payload = await fetchNextJson(`${SITE}/_next/data/${id}/index.json?${search.toString()}`)
-  }
-  const props = payload.pageProps || payload
+function payloadFromProps(props, page) {
   const jobs = (props.jobs || []).map((job) => normalizeNextJob(job))
   const meta = props.meta || {}
   const first = props.firstJob?.job
@@ -225,7 +297,7 @@ export async function listNextJobs(params = {}) {
           name: job.company,
           logo: job.logo,
           letter: job.company?.[0] || 'C',
-          color: '#453DFF',
+          color: '#0D9F7A',
           location: job.remote ? 'Remote' : job.location,
           open: 1,
         })
@@ -248,13 +320,89 @@ export async function listNextJobs(params = {}) {
   }
 }
 
+export async function listNextJobs(params = {}) {
+  const page = Math.max(1, Number(params.page || 1))
+  const props = await fetchNextPayload({ ...params, query: '' })
+  return payloadFromProps(props, page)
+}
+
+async function mapPool(items, size, fn) {
+  const out = []
+  for (let i = 0; i < items.length; i += size) {
+    const batch = items.slice(i, i + size)
+    out.push(...(await Promise.all(batch.map(fn))))
+  }
+  return out
+}
+
+export async function listAllNextJobs(params = {}) {
+  const key = `all:${params.tag || params.topic || ''}:${params.remote ? 1 : 0}:${params.location || ''}`
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.at < CATALOG_CACHE_MS) return cached.data
+  if (catalogPromise && catalogPromise.key === key) return catalogPromise.run
+
+  const run = (async () => {
+    const first = await listNextJobs({ ...params, query: '', page: 1 })
+    const totalPages = Math.min(24, Number(first.meta.totalPages || 1))
+    const jobs = [...(first.jobs || [])]
+    if (totalPages > 1) {
+      const pages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2)
+      const rest = await mapPool(pages, 4, async (page) => {
+        try {
+          return await listNextJobs({ ...params, query: '', page })
+        } catch (error) {
+          console.warn('[cjl] Next page', page, 'failed:', error.message)
+          return { jobs: [] }
+        }
+      })
+      for (const payload of rest) {
+        for (const job of payload.jobs || []) {
+          if (!jobs.some((item) => item.slug === job.slug)) jobs.push(job)
+        }
+      }
+    }
+    const data = {
+      ...first,
+      jobs,
+      meta: {
+        ...first.meta,
+        totalCount: jobs.length,
+        page: 1,
+        totalPages: 1,
+        limit: jobs.length,
+      },
+    }
+    cache.set(key, { at: Date.now(), data })
+    return data
+  })()
+
+  catalogPromise = { key, run }
+  try {
+    return await run
+  } finally {
+    if (catalogPromise?.key === key) catalogPromise = null
+  }
+}
+
 export async function getNextJob(slug) {
   if (jobIndex.has(slug) && jobIndex.get(slug).html) return jobIndex.get(slug)
-  const id = await resolveBuildId()
-  const url = `${SITE}/_next/data/${id}/jobs/${encodeURIComponent(slug)}.json`
-  const payload = await fetchNextJson(url)
-  const props = payload.pageProps || payload
-  const raw = props.firstJob?.job || props.job
-  if (!raw) return jobIndex.get(slug) || null
-  return normalizeNextJob(raw, { html: raw.jobDescription, slug: raw.seoSlug || slug })
+  try {
+    const id = await resolveBuildId()
+    const url = `${SITE}/_next/data/${id}/jobs/${encodeURIComponent(slug)}.json`
+    let payload
+    try {
+      payload = unwrapPayload(await fetchDirect(url))
+    } catch {
+      try {
+        payload = unwrapPayload(await fetchViaJina(url))
+      } catch {
+        payload = unwrapPayload(await fetchViaTranslate(`${SITE}/jobs/${encodeURIComponent(slug)}`))
+      }
+    }
+    const raw = payload.firstJob?.job || payload.job
+    if (!raw) return jobIndex.get(slug) || null
+    return normalizeNextJob(raw, { html: raw.jobDescription, slug: raw.seoSlug || slug })
+  } catch {
+    return jobIndex.get(slug) || null
+  }
 }

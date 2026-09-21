@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { CompanyLogo, Tag } from '../components/Brand'
+import { BRAND_NAME, CompanyLogo, Tag } from '../components/Brand'
 import { useJobs } from '../context/JobsContext'
 
 export default function Companies() {
@@ -14,11 +14,11 @@ export default function Companies() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       <p className="text-sm font-medium text-brand">
         {companies.length} companies hiring
-        {source ? ' · live from CryptoJobsList' : ''}
+        {source ? ' · live listings' : ''}
       </p>
-      <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Crypto Companies & Web3 Projects</h1>
+      <h1 className="mt-1 text-[26px] font-extrabold tracking-tight sm:text-3xl">Crypto Companies & Web3 Projects</h1>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-        Companies with live listings in the current CryptoJobsList feed.
+        Companies with open roles on the current {BRAND_NAME} feed.
       </p>
       {loading ? (
         <p className="mt-8 text-sm text-gray-500">Loading companies…</p>
@@ -34,7 +34,7 @@ export default function Companies() {
             >
               <div className="flex items-start gap-3">
                 <CompanyLogo company={c} logo={c.logo} name={c.name} />
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-semibold">{c.name}</h2>
                   <p className="text-xs text-gray-400">{c.location}</p>
                 </div>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import VisitTracker from './components/VisitTracker'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import { AppProvider } from './context/AppContext'
@@ -19,6 +20,8 @@ import Research from './pages/Research'
 import Layoffs from './pages/Layoffs'
 import Events from './pages/Events'
 import Applications from './pages/Applications'
+import AdminJobs from './pages/AdminJobs'
+import AdminJobEdit from './pages/AdminJobEdit'
 import { useApp } from './context/AppContext'
 
 function ScrollToTop() {
@@ -31,19 +34,24 @@ function ScrollToTop() {
 
 function RequireAdmin({ children }) {
   const { user } = useApp()
+  const location = useLocation()
   if (user?.role !== 'admin') {
-    return <Navigate to="/login" replace state={{ from: '/applications' }} />
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
   return children
 }
 
 function Layout({ children }) {
+  const { pathname } = useLocation()
+  const homeMobile = pathname === '/'
+
   return (
-    <div className="flex min-h-screen flex-col bg-white text-ink dark:bg-night dark:text-gray-100">
+    <div className={`flex min-w-0 flex-col bg-page text-ink dark:bg-night dark:text-gray-100 ${homeMobile ? 'max-lg:h-dvh max-lg:overflow-hidden lg:min-h-dvh' : 'min-h-dvh'}`}>
       <ScrollToTop />
+      <VisitTracker />
       <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</main>
+      {homeMobile ? <div className="hidden lg:block"><Footer /></div> : <Footer />}
     </div>
   )
 }
@@ -77,6 +85,22 @@ export default function App() {
               element={
                 <RequireAdmin>
                   <Applications />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/jobs"
+              element={
+                <RequireAdmin>
+                  <AdminJobs />
+                </RequireAdmin>
+              }
+            />
+            <Route
+              path="/admin/jobs/:id"
+              element={
+                <RequireAdmin>
+                  <AdminJobEdit />
                 </RequireAdmin>
               }
             />

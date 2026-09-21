@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BRAND_NAME } from '../components/Brand'
 import { useApp } from '../context/AppContext'
 import { COUNTRIES, LISTING_PRICE, readHireDraft, writeHireDraft } from '../lib/hire'
 
@@ -73,12 +74,12 @@ export default function Hire() {
   }
 
   return (
-    <div className="mx-auto grid max-w-[1280px] gap-10 px-5 py-8 lg:grid-cols-[minmax(0,520px)_1fr] lg:items-start">
-      <form className="space-y-7" onSubmit={onSubmit}>
+    <div className="mx-auto grid min-w-0 max-w-[1280px] gap-8 px-4 py-6 sm:gap-10 sm:px-5 sm:py-8 lg:grid-cols-[minmax(0,520px)_1fr] lg:items-start">
+      <form className="min-w-0 space-y-7" onSubmit={onSubmit}>
         <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight">Hire Top Web3, Crypto and Blockchain Talent</h1>
+          <h1 className="text-[26px] font-extrabold tracking-tight sm:text-[28px]">Hire with {BRAND_NAME}</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Post your job on the largest Web3 hiring platform.
+            Post a role to the {BRAND_NAME} talent pool.
             {user ? ` Signed in as ${user.email}.` : ' Sign in with email to complete posting.'}
           </p>
         </div>
@@ -99,17 +100,17 @@ export default function Hire() {
           </div>
           <textarea
             required
-            rows={8}
-            className={input}
+            rows={28}
+            className={`${input} min-h-[100dvh] resize-y`}
             placeholder="Role, responsibilities, and requirements"
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
           />
         </Field>
 
-        <label className="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2.5 text-sm dark:border-night-line">
+        <label className="flex flex-col gap-2 rounded-md border border-gray-200 px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between dark:border-night-line">
           <span>Record a Video Description</span>
-          <select className="bg-transparent text-gray-500 outline-none" value={form.video} onChange={(e) => set('video', e.target.value)}>
+          <select className="w-full bg-transparent text-gray-500 outline-none sm:w-auto" value={form.video} onChange={(e) => set('video', e.target.value)}>
             <option value="">Optional</option>
             <option value="record">Record now</option>
             <option value="link">Add a link later</option>
@@ -144,7 +145,7 @@ export default function Hire() {
 
         <div>
           <span className={label}>Country Filter</span>
-          <div className="mb-2 flex gap-4 text-sm">
+          <div className="mb-2 flex flex-wrap gap-3 text-sm sm:gap-4">
             {['include', 'exclude'].map((mode) => (
               <label key={mode} className="flex items-center gap-2">
                 <input type="radio" checked={form.countryMode === mode} onChange={() => set('countryMode', mode)} />
@@ -170,7 +171,7 @@ export default function Hire() {
 
         <section>
           <h2 className="text-lg font-bold">Application Method</h2>
-          <div className="mt-3 flex gap-4 text-sm">
+          <div className="mt-3 flex flex-wrap gap-3 text-sm sm:gap-4">
             {[
               ['email', 'Email'],
               ['redirect', 'Redirect to a form'],
@@ -211,7 +212,7 @@ export default function Hire() {
           </div>
         </section>
 
-        <button className="w-full rounded-lg bg-brand py-3 text-sm font-semibold text-white hover:bg-brand-hover">
+        <button className="min-h-11 w-full rounded-full bg-brand py-3 text-sm font-semibold text-white hover:bg-brand-hover">
           Post your job — ${LISTING_PRICE}
         </button>
       </form>

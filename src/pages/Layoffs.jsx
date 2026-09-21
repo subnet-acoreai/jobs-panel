@@ -17,14 +17,10 @@ export default function Layoffs() {
   const rows = data?.layoffs || []
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-8">
-      <h1 className="text-3xl font-extrabold tracking-tight">Crypto Layoffs Report {year}</h1>
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-5 sm:py-8">
+      <h1 className="text-[26px] font-extrabold tracking-tight sm:text-3xl">Crypto Layoffs Report {year}</h1>
       <p className="mt-2 text-sm leading-6 text-gray-500">
-        Tracking job cuts across crypto, Web3 and blockchain. Sourced from public announcements on{' '}
-        <a className="text-brand" href="https://cryptojobslist.com/crypto-layoffs" target="_blank" rel="noreferrer">
-          CryptoJobsList
-        </a>
-        .
+        Tracking job cuts across crypto, Web3 and blockchain from public announcements.
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">

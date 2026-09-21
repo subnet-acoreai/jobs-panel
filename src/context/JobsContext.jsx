@@ -36,7 +36,9 @@ export function JobsProvider({ children }) {
     setError('')
     try {
       const data = await getJson(`${url.pathname}${url.search}`)
-      const nextJobs = data.jobs || []
+      const limit = Math.max(1, Number(data.meta?.limit || 25))
+      const incoming = data.jobs || []
+      const nextJobs = !append && incoming.length > limit * 2 ? incoming.slice(0, limit) : incoming
       setJobs((prev) => {
         if (!append) return nextJobs
         const seen = new Set(prev.map((job) => job.id || job.slug))

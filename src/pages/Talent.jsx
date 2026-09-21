@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { BRAND_NAME } from '../components/Brand'
 import { useApi } from '../lib/useApi'
 
 export default function Talent() {
@@ -14,11 +15,11 @@ export default function Talent() {
   const skills = useMemo(() => insights?.skills || [], [insights])
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
       <p className="text-sm font-medium text-brand">{(meta?.total || 35118).toLocaleString()}+ pre-vetted professionals</p>
-      <h1 className="mt-1 text-3xl font-extrabold tracking-tight">Hire Crypto & Web3 Talent</h1>
+      <h1 className="mt-1 text-[26px] font-extrabold tracking-tight sm:text-3xl">Hire Crypto & Web3 Talent</h1>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-500">
-        Browse public talent cards from CryptoJobsList. Hourly rates stay behind sign-in on the official board. Typical range {meta?.rateRange || '$16–$50/hr'}.
+        Browse public talent cards on {BRAND_NAME}. Typical range {meta?.rateRange || '$16–$50/hr'}.
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -40,7 +41,7 @@ export default function Talent() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="What skills are you hiring for?"
-          className="min-w-[220px] flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm dark:border-night-line dark:bg-night-card"
+          className="min-w-0 flex-1 rounded-full border border-gray-200 px-4 py-2.5 text-sm dark:border-night-line dark:bg-night-card"
         />
         <button
           type="button"
@@ -67,7 +68,7 @@ export default function Talent() {
       ) : null}
 
       <p className="mt-6 text-sm text-gray-400">
-        Showing {list.length} public profiles. Full directory: {meta?.total?.toLocaleString()}+ on CryptoJobsList.
+        Showing {list.length} public profiles. Full directory: {meta?.total?.toLocaleString()}+ on {BRAND_NAME}.
       </p>
       {loading ? <p className="mt-6 text-sm text-gray-400">Loading talent…</p> : null}
       {error ? <p className="mt-6 text-sm text-red-500">{error}</p> : null}
@@ -75,8 +76,8 @@ export default function Talent() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         {list.map((person) => (
           <article key={person.id} className="rounded-2xl border border-gray-200 p-5 dark:border-night-line">
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="font-semibold">{person.role}</h2>
                 <p className="mt-1 text-xs text-gray-400">
                   {person.location}
@@ -84,7 +85,7 @@ export default function Talent() {
                   {person.remote ? ' · Remote' : ''}
                 </p>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${person.available ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${person.available ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                 {person.available ? 'Available' : 'Sign in to see rates'}
               </span>
             </div>
@@ -100,11 +101,11 @@ export default function Talent() {
                 </span>
               ))}
             </div>
-            <p className="mt-3 text-xs text-gray-400">Rates: sign in on CryptoJobsList to see them.</p>
+            <p className="mt-3 text-xs text-gray-400">Rates: sign in on {BRAND_NAME} to see them.</p>
             <button
               type="button"
               onClick={() => setContacted((c) => ({ ...c, [person.id]: true }))}
-              className="mt-4 w-full rounded-lg bg-brand py-2 text-sm font-semibold text-white"
+              className="mt-4 min-h-11 w-full rounded-full bg-brand py-2 text-sm font-semibold text-white"
             >
               {contacted[person.id] ? 'Message sent' : 'Contact directly'}
             </button>

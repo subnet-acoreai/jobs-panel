@@ -60,6 +60,7 @@ function haystack(job) {
     job.summary,
     job.plain,
     ...(job.tags || []),
+    ...(job.tagSlugs || []),
   ]
     .filter(Boolean)
     .join(' ')
@@ -130,8 +131,11 @@ export function jobMatches(job, params = {}) {
   if (params.remote && !job.remote) return false
   if (!matchesCategory(job, params.category)) return false
   if (!matchesLocation(job, params.location)) return false
-  if (!matchesTopic(job, params.topic)) return false
-  return matchesTokens(haystack(job), params.query)
+  if (!matchesTopic(job, params.topic || params.tag)) return false
+  const query = String(params.query || '').trim()
+  if (!query) return true
+  const hay = haystack(job)
+  return hay.includes(query.toLowerCase()) || matchesTokens(hay, query)
 }
 
 export function filterAndSortJobs(jobs, params = {}) {
