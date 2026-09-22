@@ -12,6 +12,7 @@ export default function JobDetail() {
   const { jobs, getJob } = useJobs()
   const { bookmarks, toggleBookmark } = useApp()
   const [job, setJob] = useState(() => jobs.find((j) => j.slug === slug) || null)
+  const [company, setCompany] = useState(null)
   const [missing, setMissing] = useState(false)
 
   useEffect(() => {
@@ -36,6 +37,22 @@ export default function JobDetail() {
       live = false
     }
   }, [slug, jobs, getJob])
+
+  useEffect(() => {
+    if (!job?.companySlug) return undefined
+    let live = true
+    fetch(`/api/companies/${encodeURIComponent(job.companySlug)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (live) setCompany(data.company || null)
+      })
+      .catch(() => {
+        if (live) setCompany(null)
+      })
+    return () => {
+      live = false
+    }
+  }, [job?.companySlug])
 
   const similar = useMemo(() => {
     if (!job) return []
@@ -62,6 +79,7 @@ export default function JobDetail() {
   const saved = bookmarks.includes(job.id)
   const html = job.html
   const paragraphs = Array.isArray(job.description) ? job.description : []
+  const about = String(company?.about || '').replace(/\s+/g, ' ').trim()
 
   return (
     <div className="mx-auto grid min-w-0 max-w-6xl gap-8 px-4 py-6 sm:py-8 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -143,13 +161,25 @@ export default function JobDetail() {
       <aside className="space-y-4">
         <div className="rounded-2xl border border-gray-200 p-5 dark:border-night-line">
           <div className="flex items-center gap-3">
-            <CompanyLogo logo={job.logo} name={job.company} />
+            <CompanyLogo logo={company?.logo || job.logo} name={company?.name || job.company} />
             <div className="min-w-0">
-              <p className="truncate font-semibold">{job.company}</p>
-              <p className="truncate text-xs text-gray-500">{job.remote ? 'Remote' : job.location}</p>
+              <p className="truncate font-semibold">{company?.name || job.company}</p>
+              <p className="truncate text-xs text-gray-500">
+                {company?.location || (job.remote ? 'Remote' : job.location)}
+              </p>
             </div>
           </div>
-          <p className="mt-3 text-sm leading-6 text-gray-500">{job.summary}</p>
+          {about ? <p className="mt-3 line-clamp-6 text-sm leading-6 text-gray-500">{about}</p> : null}
+          {company?.website ? (
+            <a
+              href={company.website}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 mr-3 inline-block text-sm font-medium text-brand hover:underline"
+            >
+              Website
+            </a>
+          ) : null}
           <Link to={`/companies/${job.companySlug}`} className="mt-3 inline-block text-sm font-medium text-brand">
             View jobs at {job.company}
           </Link>

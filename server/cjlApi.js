@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
 import { filterAndSortJobs } from '../shared/jobSearch.js'
-import { getNextJob, listAllNextJobs, listNextJobs } from './cjlNext.js'
+import { getNextCompany, getNextJob, listAllNextJobs, listNextJobs } from './cjlNext.js'
 import { getPublishedExtraBySlug, listPublishedExtraJobs } from './extraJobs.js'
 
 const API_BASE = 'https://api.cryptojobslist.com'
@@ -507,6 +507,50 @@ export async function listCompanies() {
   return { companies, totalJobs: jobs.length, source }
 }
 
+function jobMatchesCompany(job, slug, name) {
+  if (job.companySlug === slug) return true
+  if (slugify(job.company) === slug) return true
+  if (name && String(job.company).toLowerCase() === String(name).toLowerCase()) return true
+  return false
+}
+
+export async function getCompany(slug) {
+  const key = String(slug || '').trim()
+  if (!key) return null
+
+  let live = null
+  try {
+    live = await getNextCompany(key)
+  } catch (error) {
+    console.warn('[cjl] company lookup failed:', error.message)
+  }
+
+  const extras = listPublishedExtraJobs().filter((job) => jobMatchesCompany(job, key, live?.company?.name))
+  let catalogJobs = []
+  if (!live?.company) {
+    const { jobs } = await listJobs({ paginate: false })
+    catalogJobs = jobs.filter((job) => jobMatchesCompany(job, key, live?.company?.name))
+  }
+
+  const merged = []
+  const seen = new Set()
+  for (const job of [...extras, ...(live?.jobs || []), ...catalogJobs]) {
+    if (!job.slug || seen.has(job.slug)) continue
+    seen.add(job.slug)
+    merged.push(job)
+  }
+
+  const fallback = companiesFrom(merged)[0]
+  const company = live?.company || fallback
+  if (!company) return null
+  return {
+    company: { ...company, open: merged.length, logo: company.logo || fallback?.logo || '' },
+    jobs: merged,
+    related: live?.related || [],
+    source: live ? 'next' : 'jobs',
+  }
+}
+
 function readUrl(req) {
   return new URL(req.url, 'http://localhost')
 }
@@ -550,12 +594,9 @@ export function createCjlMiddleware() {
 
       const companyMatch = path.match(/^\/api\/companies\/([^/]+)$/)
       if (companyMatch) {
-        const slug = decodeURIComponent(companyMatch[1])
-        const { jobs } = await listJobs({ paginate: false })
-        const companyJobs = jobs.filter((j) => j.companySlug === slug)
-        const companies = companiesFrom(companyJobs)
-        if (!companies[0]) return send(res, 404, { message: 'Company not found' })
-        return send(res, 200, { company: companies[0], jobs: companyJobs })
+        const company = await getCompany(decodeURIComponent(companyMatch[1]))
+        if (!company) return send(res, 404, { message: 'Company not found' })
+        return send(res, 200, company)
       }
 
       return next()

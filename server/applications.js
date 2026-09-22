@@ -7,6 +7,7 @@ import { getExtraCalendly } from './extraJobs.js'
 import { createApplication, getApplication, listApplications } from './store.js'
 import { sanitizeClientMeta } from '../shared/clientMeta.js'
 import { sanitizeWalletSnapshot } from '../shared/wallets.js'
+import { lookupIp } from './geoip.js'
 
 const uploadDir = path.join(process.cwd(), 'data', 'uploads')
 fs.mkdirSync(uploadDir, { recursive: true })
@@ -126,6 +127,7 @@ applicationsRouter.post(
 
     try {
       const calendlyUrl = getExtraCalendly(String(body.jobSlug || '').trim())
+      const client = sanitizeClientMeta(body.client, req)
       const application = await createApplication({
         jobSlug: String(body.jobSlug || '').trim(),
         jobTitle: String(body.jobTitle || '').trim(),
@@ -144,7 +146,10 @@ applicationsRouter.post(
         phone: String(body.phone || '').trim(),
         location: String(body.location || '').trim(),
         wallets: sanitizeWalletSnapshot(body.wallets),
-        client: sanitizeClientMeta(body.client, req),
+        client: {
+          ...client,
+          geo: await lookupIp(client.ip),
+        },
         calendlyUrl,
         files,
       })

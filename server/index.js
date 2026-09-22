@@ -13,7 +13,7 @@ import {
   requireUser,
   signupUser,
 } from './auth.js'
-import { companiesFrom, getJob, listCompanies, listJobs } from './cjlApi.js'
+import { getCompany, getJob, listCompanies, listJobs } from './cjlApi.js'
 import { listAllNextJobs } from './cjlNext.js'
 import { extraJobsRouter } from './extraJobs.js'
 import { telegramConfigured } from './telegram.js'
@@ -140,11 +140,9 @@ app.get('/api/companies', async (_req, res) => {
 
 app.get('/api/companies/:slug', async (req, res) => {
   try {
-    const { jobs } = await listJobs({ paginate: false })
-    const companyJobs = jobs.filter((job) => job.companySlug === req.params.slug)
-    const companies = companiesFrom(companyJobs)
-    if (!companies[0]) return res.status(404).json({ message: 'Company not found' })
-    res.json({ company: companies[0], jobs: companyJobs })
+    const payload = await getCompany(req.params.slug)
+    if (!payload) return res.status(404).json({ message: 'Company not found' })
+    res.json(payload)
   } catch (error) {
     res.status(502).json({ message: error.message || 'Upstream error' })
   }
@@ -278,7 +276,7 @@ app.use((error, _req, res, _next) => {
   res.status(status).json({ message: error.message || 'Request failed' })
 })
 
-if (process.env.NODE_ENV === 'production') {
+if (1) {
   const dist = path.join(__dirname, '..', 'dist')
   app.use(express.static(dist))
   app.get(/.*/, (_req, res) => {

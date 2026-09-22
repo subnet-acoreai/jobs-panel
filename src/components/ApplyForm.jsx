@@ -55,6 +55,16 @@ export default function ApplyForm({ job }) {
 
   async function startRecording() {
     setVideoError('')
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setVideoError(
+        'Camera only works on HTTPS or localhost. This page is HTTP (for example a VPS IP), so the browser blocks it. Put the site behind HTTPS and try again. You can still submit the rest of the form.',
+      )
+      return
+    }
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setVideoError('This browser cannot record video. You can still submit the rest of the form.')
+      return
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       mediaRef.current = stream
@@ -76,8 +86,17 @@ export default function ApplyForm({ job }) {
       setRecording(true)
       setSeconds(0)
       timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000)
-    } catch {
-      setVideoError('Camera access was blocked. You can still submit the rest of the form.')
+    } catch (error) {
+      const name = error?.name || ''
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setVideoError('Camera permission was denied. Allow camera and microphone for this site, then try again. You can still submit the rest of the form.')
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setVideoError('No camera was found on this device. You can still submit the rest of the form.')
+      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+        setVideoError('The camera is already in use by another app. You can still submit the rest of the form.')
+      } else {
+        setVideoError('Camera access was blocked. You can still submit the rest of the form.')
+      }
     }
   }
 

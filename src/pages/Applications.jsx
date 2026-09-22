@@ -26,6 +26,7 @@ function ClientMeta({ client }) {
     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
       {client.os ? <span>OS: {client.os}</span> : null}
       {client.ip ? <span>IP: {client.ip}</span> : null}
+      {client.geo?.label ? <span>Location: {client.geo.label}</span> : null}
     </div>
   )
 }

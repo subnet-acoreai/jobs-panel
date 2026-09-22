@@ -152,6 +152,7 @@ async function fetchDirect(url) {
       'User-Agent': BROWSER_UA,
       Referer: `${SITE}/`,
     },
+    signal: AbortSignal.timeout(8000),
   })
   const text = await res.text()
   if (!res.ok) throw new Error(`Next data ${res.status}`)
@@ -162,6 +163,7 @@ async function fetchDirect(url) {
 async function fetchViaJina(url) {
   const res = await fetch(`https://r.jina.ai/${url}`, {
     headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(10000),
   })
   if (!res.ok) throw new Error(`Jina ${res.status}`)
   const payload = await res.json()
@@ -181,6 +183,29 @@ async function fetchViaTranslate(url) {
   })
   if (!res.ok) throw new Error(`Translate ${res.status}`)
   return extractNextData(await res.text())
+}
+
+function isRetryable(error) {
+  return /429|timeout|aborted|fetch failed|Translate 5|Jina 429|Next data 403/i.test(error?.message || '')
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function withRetry(fn, attempts = 4) {
+  let last
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn()
+    } catch (error) {
+      last = error
+      if (!isRetryable(error) || i === attempts - 1) throw error
+      const wait = /429/.test(error.message) ? 5000 * (i + 1) : 1500 * (i + 1)
+      await sleep(wait)
+    }
+  }
+  throw last
 }
 
 function pageUrl(params = {}) {
@@ -209,12 +234,12 @@ async function fetchNextPayload(params = {}) {
   const jsonUrl = `${SITE}/_next/data/${id}/${nextRoute({ ...params, query: '' })}`
   let data
   try {
-    data = unwrapPayload(await fetchDirect(jsonUrl))
+    data = unwrapPayload(await withRetry(() => fetchDirect(jsonUrl), 2))
   } catch {
     try {
-      data = unwrapPayload(await fetchViaJina(jsonUrl))
+      data = unwrapPayload(await withRetry(() => fetchViaJina(jsonUrl), 2))
     } catch {
-      data = unwrapPayload(await fetchViaTranslate(html))
+      data = unwrapPayload(await withRetry(() => fetchViaTranslate(html)))
     }
   }
   if (data?.notFound) throw new Error('Next page not found')
@@ -326,9 +351,10 @@ export async function listNextJobs(params = {}) {
   return payloadFromProps(props, page)
 }
 
-async function mapPool(items, size, fn) {
+async function mapPool(items, size, fn, gap = 0) {
   const out = []
   for (let i = 0; i < items.length; i += size) {
+    if (i && gap) await sleep(gap)
     const batch = items.slice(i, i + size)
     out.push(...(await Promise.all(batch.map(fn))))
   }
@@ -347,15 +373,23 @@ export async function listAllNextJobs(params = {}) {
     const jobs = [...(first.jobs || [])]
     if (totalPages > 1) {
       const pages = Array.from({ length: totalPages - 1 }, (_, i) => i + 2)
-      const rest = await mapPool(pages, 4, async (page) => {
+      const loadPage = async (page) => {
         try {
-          return await listNextJobs({ ...params, query: '', page })
+          return { page, ...(await withRetry(() => listNextJobs({ ...params, query: '', page }))) }
         } catch (error) {
           console.warn('[cjl] Next page', page, 'failed:', error.message)
-          return { jobs: [] }
+          return { page, jobs: [] }
         }
-      })
-      for (const payload of rest) {
+      }
+      const rest = await mapPool(pages, 2, loadPage, 900)
+      const missing = rest.filter((payload) => !(payload.jobs || []).length).map((payload) => payload.page)
+      const recovered = missing.length
+        ? await mapPool(missing, 1, async (page) => {
+            await sleep(2500)
+            return loadPage(page)
+          })
+        : []
+      for (const payload of [...rest, ...recovered]) {
         for (const job of payload.jobs || []) {
           if (!jobs.some((item) => item.slug === job.slug)) jobs.push(job)
         }
@@ -382,6 +416,99 @@ export async function listAllNextJobs(params = {}) {
   } finally {
     if (catalogPromise?.key === key) catalogPromise = null
   }
+}
+
+function locationLabel(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  return value.formatted || value.name || value.city || value.country || ''
+}
+
+function timeAgo(iso) {
+  const at = new Date(iso || '').getTime()
+  if (!Number.isFinite(at)) return ''
+  const hours = Math.max(1, Math.round((Date.now() - at) / 3_600_000))
+  if (hours < 24) return `Active ${hours} hour${hours === 1 ? '' : 's'} ago`
+  const days = Math.round(hours / 24)
+  return `Active ${days} day${days === 1 ? '' : 's'} ago`
+}
+
+export function normalizeNextCompany(raw, extras = {}) {
+  const about = String(raw.about || '').trim()
+  return {
+    slug: raw.slug || extras.slug || '',
+    name: raw.name || 'Unknown',
+    logo: raw.logo || '',
+    letter: (raw.name || 'C')[0],
+    color: '#0D9F7A',
+    location: locationLabel(raw.location) || extras.location || '',
+    about,
+    html: raw.markedAbout || (about ? `<p>${about}</p>` : ''),
+    website: raw.url || '',
+    twitter: raw.twitter || '',
+    discord: raw.discord || '',
+    github: raw.github || '',
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    culture: raw.culture || '',
+    interviewProcess: raw.interviewProcess || '',
+    currentTeam: raw.currentTeam || '',
+    techStack: raw.techStack || '',
+    funding: raw.funding || '',
+    vacationPolicy: raw.vacationPolicy || '',
+    founded: raw.foundedDate || '',
+    lastActiveAt: raw.lastActiveAt || '',
+    lastActive: timeAgo(raw.lastActiveAt),
+    verified: Boolean(raw.verified),
+    reviewCount: Number(extras.reviewCount || 0),
+    open: Number(extras.open || 0),
+    tagline: extras.tagline || about.slice(0, 180),
+  }
+}
+
+export async function getNextCompany(slug) {
+  const key = `company:${slug}`
+  const cached = cache.get(key)
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.data
+
+  const id = await resolveBuildId()
+  const jsonUrl = `${SITE}/_next/data/${id}/companies/${encodeURIComponent(slug)}.json`
+  let payload
+  try {
+    payload = unwrapPayload(await withRetry(() => fetchDirect(jsonUrl), 2))
+  } catch {
+    try {
+      payload = unwrapPayload(await withRetry(() => fetchViaJina(jsonUrl), 2))
+    } catch {
+      payload = unwrapPayload(
+        await withRetry(() => fetchViaTranslate(`${SITE}/companies/${encodeURIComponent(slug)}`)),
+      )
+    }
+  }
+  if (!payload?.company) return null
+
+  const jobs = (payload.jobs || []).map((job) => normalizeNextJob(job))
+  const company = normalizeNextCompany(payload.company, {
+    slug,
+    open: jobs.length,
+    reviewCount: payload.reviewCount,
+    location: locationLabel(payload.location),
+    tagline: payload.companies?.find((item) => item.slug === slug)?.tagline || '',
+  })
+  const related = (payload.companies || [])
+    .filter((item) => item.slug && item.slug !== slug)
+    .slice(0, 6)
+    .map((item) => ({
+      slug: item.slug,
+      name: item.name,
+      logo: item.logo || '',
+      tagline: item.tagline || '',
+      tags: item.tags || [],
+      open: item.activeJobs || 0,
+      verified: Boolean(item.verified),
+    }))
+  const data = { company, jobs, related }
+  cache.set(key, { at: Date.now(), data })
+  return data
 }
 
 export async function getNextJob(slug) {
