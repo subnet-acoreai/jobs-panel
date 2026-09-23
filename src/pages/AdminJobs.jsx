@@ -100,6 +100,11 @@ export default function AdminJobs() {
                   {job.company}
                   {job.location ? ` · ${job.location}` : ''}
                 </p>
+                <p className="mt-1 text-xs text-gray-400">
+                  Posted {job.publishedAt ? new Date(job.publishedAt).toLocaleDateString() : '—'}
+                  {' · '}
+                  {Number(job.applicants || 0) === 1 ? '1 applicant' : `${Number(job.applicants || 0).toLocaleString()} applicants`}
+                </p>
               </div>
               <span
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { BRAND_NAME, CompanyLogo, Tag } from '../components/Brand'
 import ApplyForm from '../components/ApplyForm'
 import CopyJobButton from '../components/CopyJobButton'
+import JobStats from '../components/JobStats'
 import JobRow from '../components/JobRow'
 import { useApp } from '../context/AppContext'
 import { useJobs } from '../context/JobsContext'
@@ -106,6 +107,7 @@ export default function JobDetail() {
           {job.salary && <span className="font-medium text-ink dark:text-white">{job.salary}</span>}
           <span>📍 {job.remote ? 'Remote' : job.location || '—'}</span>
           <span>{job.type}</span>
+          <JobStats job={job} variant="long" className="text-sm text-gray-500" />
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {(job.tags || []).map((t) => (
@@ -130,7 +132,6 @@ export default function JobDetail() {
         </div>
         <p className="mt-4 text-xs text-gray-400">
           Apply via {BRAND_NAME} · {job.company}
-          {job.postedOn ? ` · ${job.postedOn}` : ''}
         </p>
 
         {html ? (

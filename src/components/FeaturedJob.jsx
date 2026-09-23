@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CompanyLogo, Tag } from './Brand'
+import JobStats from './JobStats'
 import { useApp } from '../context/AppContext'
 
 export default function FeaturedJob({ job }) {
@@ -55,9 +56,9 @@ export default function FeaturedJob({ job }) {
             Details
           </Link>
         </div>
-        <p className="mt-4 text-xs text-gray-400">
-          Posted by {job.company}
-          {job.postedOn ? ` ${job.postedOn}` : ''}
+        <p className="mt-4 flex flex-wrap items-center gap-x-2 text-xs text-gray-400">
+          <span>Posted by {job.company}</span>
+          <JobStats job={job} variant="long" className="text-xs text-gray-400" />
         </p>
       </div>
     </section>

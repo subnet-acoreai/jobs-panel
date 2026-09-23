@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CompanyLogo, Tag } from './Brand'
 import { Salary } from './JobListItem'
+import JobStats from './JobStats'
 import ApplyForm from './ApplyForm'
 import CopyJobButton from './CopyJobButton'
 import { useApp } from '../context/AppContext'
@@ -63,6 +64,7 @@ export default function JobPreview({ job, variant = 'panel' }) {
                 {job.remote ? '📍 Remote' : job.location ? `📍 ${job.location}` : ''}
                 {job.type ? ` · ${job.type}` : ''}
               </span>
+              <JobStats job={job} variant="long" className="text-sm" />
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {(job.tags || []).slice(0, sheet ? 4 : 6).map((t) => (

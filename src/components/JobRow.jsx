@@ -1,18 +1,17 @@
 import { Link } from 'react-router-dom'
 import { CompanyLogo, Tag } from './Brand'
-import { formatPosted } from '../data/site'
+import JobStats from './JobStats'
 import { useApp } from '../context/AppContext'
 
 export default function JobRow({ job }) {
   const { bookmarks, toggleBookmark } = useApp()
   const saved = bookmarks.includes(job.id)
-  const posted = formatPosted(job.postedDaysAgo)
 
   return (
     <article className="group relative border-b border-gray-100 last:border-0 hover:bg-gray-50/80 dark:border-night-line dark:hover:bg-white/[0.03]">
       <Link
         to={`/jobs/${job.slug}`}
-        className="grid items-center gap-3 px-3 py-3.5 sm:px-4 lg:grid-cols-[1fr_140px_160px_1fr_52px]"
+        className="grid items-center gap-3 px-3 py-3.5 sm:px-4 lg:grid-cols-[1fr_140px_160px_1fr_150px]"
       >
         <div className="flex min-w-0 items-center gap-3">
           <CompanyLogo logo={job.logo} name={job.company} />
@@ -28,7 +27,7 @@ export default function JobRow({ job }) {
               {(job.tags || []).slice(0, 3).map((tag) => (
                 <Tag key={tag}>{tag}</Tag>
               ))}
-              {posted ? <span className="text-xs text-gray-400">{posted}</span> : null}
+              <JobStats job={job} className="text-xs text-gray-400" />
             </div>
           </div>
         </div>
@@ -41,7 +40,9 @@ export default function JobRow({ job }) {
             <Tag key={tag}>{tag}</Tag>
           ))}
         </div>
-        <p className="hidden text-right text-xs text-gray-400 lg:block">{posted || 'Live'}</p>
+        <p className="hidden text-right text-xs text-gray-400 lg:block">
+          <JobStats job={job} className="justify-end text-xs text-gray-400" />
+        </p>
       </Link>
       <button
         type="button"

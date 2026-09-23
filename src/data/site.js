@@ -1024,3 +1024,40 @@ export function formatPosted(days) {
   if (days < 14) return '1w'
   return `${Math.round(days / 7)}w`
 }
+
+function shortenPosted(ago) {
+  const text = String(ago || '').trim()
+  if (!text) return ''
+  if (/just now|minute|hour|today/i.test(text)) return 'Today'
+  const match = text.match(/(\d+)\s*(day|week|month|year|d|w|mo|y)/i)
+  if (!match) return text
+  const count = Number(match[1])
+  const unit = match[2].toLowerCase()
+  if (unit.startsWith('day') || unit === 'd') return count === 0 ? 'Today' : `${count}d`
+  if (unit.startsWith('week') || unit === 'w') return `${count}w`
+  if (unit.startsWith('month') || unit === 'mo') return `${count}mo`
+  if (unit.startsWith('year') || unit === 'y') return `${count}y`
+  return text
+}
+
+export function jobPostedLabel(job) {
+  if (!job) return ''
+  if (job.postedDaysAgo != null && !Number.isNaN(Number(job.postedDaysAgo))) {
+    return formatPosted(Number(job.postedDaysAgo))
+  }
+  return shortenPosted(job.postedAgo)
+}
+
+export function formatPostedOn(job) {
+  if (job?.postedOn) return job.postedOn
+  if (!job?.publishedAt) return ''
+  const date = new Date(job.publishedAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+export function formatApplicants(count) {
+  const n = Number(count)
+  if (!Number.isFinite(n) || n < 1) return ''
+  return n === 1 ? '1 applicant' : `${n.toLocaleString()} applicants`
+}

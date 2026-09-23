@@ -1,4 +1,5 @@
 import { CompanyLogo } from './Brand'
+import JobStats from './JobStats'
 
 export function Salary({ value }) {
   if (!value) return null
@@ -67,6 +68,7 @@ export default function JobListItem({ job, selected, onSelect }) {
                 {tag}
               </span>
             ))}
+            <JobStats job={job} />
           </div>
         </div>
       </div>

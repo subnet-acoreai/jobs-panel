@@ -64,6 +64,13 @@ function salaryDisplay(job) {
   return formatSalary(job.salary)
 }
 
+function daysAgo(dateValue) {
+  if (!dateValue) return null
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) return null
+  return Math.max(0, Math.round((Date.now() - date.getTime()) / 86400000))
+}
+
 function employmentType(tags = []) {
   if (tags.includes('part-time')) return 'Part Time'
   if (tags.includes('contract') || tags.includes('freelance')) return 'Contract'
@@ -90,7 +97,7 @@ export function normalizeNextJob(raw, extras = {}) {
     tags: tags.slice(0, 8),
     tagSlugs: raw.tags || [],
     category: raw.category || '',
-    postedDaysAgo: null,
+    postedDaysAgo: daysAgo(raw.publishedAt),
     postedAgo: raw.timeSinceJobCreation || '',
     featured: Boolean(raw.isFeatured),
     applicants: Number(raw.directApplicationsQty || 0),

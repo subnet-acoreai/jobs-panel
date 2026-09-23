@@ -7,6 +7,16 @@ const input =
   'w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-night-line dark:bg-night-card'
 const label = 'mb-1.5 block text-[13px] font-medium text-ink dark:text-white'
 
+function toDateInput(iso) {
+  if (!iso) return ''
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const empty = {
   title: '',
   company: '',
@@ -23,6 +33,8 @@ const empty = {
   calendlyUrl: '',
   email: '',
   status: 'published',
+  publishedAt: toDateInput(new Date().toISOString()),
+  applicants: '0',
 }
 
 async function adminJson(url, options = {}) {
@@ -49,6 +61,8 @@ function toForm(job) {
     calendlyUrl: job.calendlyUrl || '',
     email: job.email || '',
     status: job.status || 'draft',
+    publishedAt: toDateInput(job.publishedAt || job.createdAt),
+    applicants: job.applicants != null ? String(job.applicants) : '0',
   }
 }
 
@@ -94,7 +108,12 @@ export default function AdminJobEdit() {
     setError('')
     setSaved(false)
     try {
-      const body = { ...form, remote: form.remote || /remote/i.test(form.location) }
+      const body = {
+        ...form,
+        remote: form.remote || /remote/i.test(form.location),
+        applicants: Number(form.applicants || 0),
+        publishedAt: form.publishedAt,
+      }
       const payload = isNew
         ? await adminJson('/api/admin/jobs', {
             method: 'POST',
@@ -211,6 +230,30 @@ export default function AdminJobEdit() {
           <span className={label}>Notification email</span>
           <input className={input} type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
         </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className={label}>Posted date</span>
+            <input
+              className={input}
+              type="date"
+              value={form.publishedAt}
+              onChange={(e) => set('publishedAt', e.target.value)}
+            />
+            <span className="mt-1 block text-[12px] text-gray-400">Shown as Today, 2d, or 1w on the jobs list.</span>
+          </label>
+          <label className="block">
+            <span className={label}>Applicants</span>
+            <input
+              className={input}
+              type="number"
+              min="0"
+              step="1"
+              value={form.applicants}
+              onChange={(e) => set('applicants', e.target.value)}
+            />
+            <span className="mt-1 block text-[12px] text-gray-400">Display count only — it does not change when people apply.</span>
+          </label>
+        </div>
         <label className="block">
           <span className={label}>Status</span>
           <select className={input} value={form.status} onChange={(e) => set('status', e.target.value)}>

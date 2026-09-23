@@ -81,6 +81,27 @@ function normalizeCalendly(url) {
   return parsed.toString()
 }
 
+function daysAgo(dateValue) {
+  if (!dateValue) return null
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) return null
+  return Math.max(0, Math.round((Date.now() - date.getTime()) / 86400000))
+}
+
+function parsePostedAt(value, fallback = '') {
+  const raw = String(value ?? '').trim() || String(fallback || '').trim()
+  if (!raw) return ''
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T00:00:00`) : new Date(raw)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toISOString()
+}
+
+function parseApplicants(value, fallback = 0) {
+  const n = Number(value ?? fallback)
+  if (!Number.isFinite(n) || n < 0) return 0
+  return Math.min(999999, Math.round(n))
+}
+
 function uniqueSlug(base, existing, ignoreId = '') {
   const root = `extra-${slugify(base) || 'job'}`
   const taken = new Set(
@@ -141,6 +162,8 @@ function shapeInput(body, existing = {}, all = []) {
     email: String(body.email ?? existing.email ?? '').trim(),
     status: resolvedStatus,
     slug: uniqueSlug(`${title}-at-${company}`, all, existing.id),
+    applicants: parseApplicants(body.applicants, existing.applicants),
+    publishedAt: parsePostedAt(body.publishedAt ?? body.postedAt, existing.publishedAt),
   }
 }
 
@@ -148,6 +171,7 @@ export function extraJobToPublic(job) {
   const html = descriptionToHtml(job.description)
   const salary = salaryLabel(job)
   const posted = job.publishedAt || job.createdAt
+  const postedDate = posted ? new Date(posted) : null
   return {
     id: job.slug,
     extraId: job.id,
@@ -161,12 +185,16 @@ export function extraJobToPublic(job) {
     remote: Boolean(job.remote),
     tags: job.tags || [],
     category: '',
-    postedDaysAgo: 0,
+    postedDaysAgo: daysAgo(posted),
     featured: true,
-    applicants: 0,
+    applicants: parseApplicants(job.applicants, 0),
     views: 0,
     type: job.type || 'Full Time',
-    postedOn: posted ? new Date(posted).toLocaleDateString() : '',
+    postedOn:
+      postedDate && !Number.isNaN(postedDate.getTime())
+        ? postedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : '',
+    publishedAt: posted || '',
     summary: htmlToText(html).slice(0, 280),
     plain: htmlToText(html).slice(0, 2500),
     html,
@@ -215,6 +243,8 @@ function fromLiveJob(live) {
     calendlyUrl: live.calendlyUrl || '',
     email: '',
     logo: live.logo || '',
+    applicants: Number(live.applicants || 0),
+    publishedAt: live.publishedAt || '',
   }
 }
 
@@ -257,7 +287,7 @@ extraJobsRouter.post('/copy', async (req, res) => {
       ),
       logo: source.logo || live?.logo || '',
     }
-    if (copy.status === 'published') copy.publishedAt = now
+    if (!copy.publishedAt && copy.status === 'published') copy.publishedAt = now
     all.push(copy)
     writeJobs(all)
     res.status(201).json({ job: copy })
@@ -276,7 +306,7 @@ extraJobsRouter.post('/', (req, res) => {
       updatedAt: now,
       ...shapeInput(req.body || {}, {}, all),
     }
-    if (job.status === 'published') job.publishedAt = now
+    if (!job.publishedAt && job.status === 'published') job.publishedAt = now
     all.push(job)
     writeJobs(all)
     res.status(201).json({ job })
@@ -305,8 +335,7 @@ extraJobsRouter.put('/:id', (req, res) => {
       updatedAt: new Date().toISOString(),
       copiedFrom: existing.copiedFrom || '',
     }
-    if (next.status === 'published' && !existing.publishedAt) next.publishedAt = next.updatedAt
-    if (next.status !== 'published') delete next.publishedAt
+    if (!next.publishedAt && next.status === 'published') next.publishedAt = next.updatedAt
     next.slug = existing.slug || next.slug
     all[index] = next
     writeJobs(all)
