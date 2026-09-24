@@ -56,7 +56,7 @@ function walletLines(wallets) {
 
 function visitMessage(visit) {
   const lines = [
-    'Web3Hire visit',
+    'CryptoRecruit visit',
     `Page: ${visit.path}`,
     visit.title ? `Title: ${visit.title}` : '',
     `IP: ${visit.ip || 'unknown'}`,

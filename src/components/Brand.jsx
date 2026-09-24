@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 
-export const BRAND_NAME = 'Web3Hire'
+export const BRAND_NAME = 'CryptoRecruit'
 
 export function Logo({ className = 'h-8 w-8' }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
       <rect width="32" height="32" rx="9" fill="#0D9F7A" />
       <path
-        d="M6.2 9.2h3.55l2.55 11.1h.16L16 9.2h3.2l3.45 11.1h.16l2.55-11.1H29L24.15 22.8h-3.7L16.6 11.6h-.2L12.9 22.8H9.2L4.4 9.2h1.8z"
+        d="M22.8 9.15A8.9 8.9 0 0 0 16 6.6c-5.3 0-9.4 4.2-9.4 9.4s4.1 9.4 9.4 9.4c2.8 0 5.3-1.2 7.1-3.2l-2.55-2.05A5.95 5.95 0 0 1 16 22.15c-3.4 0-6.05-2.7-6.05-6.15S12.6 9.85 16 9.85c1.55 0 2.95.55 4 1.5l2.8-2.2z"
         fill="#D4F562"
       />
     </svg>
@@ -17,7 +17,7 @@ export function Logo({ className = 'h-8 w-8' }) {
 export function BrandWordmark({ className = '', accentClassName = 'text-brand' }) {
   return (
     <span className={`whitespace-nowrap ${className}`}>
-      Web3<span className={accentClassName}>Hire</span>
+      Crypto<span className={accentClassName}>Recruit</span>
     </span>
   )
 }

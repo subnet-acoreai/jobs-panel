@@ -7,10 +7,10 @@ export default function About() {
   ]
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-5 sm:py-10">
-      <p className="text-sm font-semibold text-brand">About Web3Hire</p>
+      <p className="text-sm font-semibold text-brand">About CryptoRecruit</p>
       <h1 className="mt-2 text-[28px] font-extrabold tracking-tight sm:text-4xl">The hiring desk for crypto teams.</h1>
       <p className="mt-4 text-[15px] leading-7 text-muted">
-        Web3Hire is a focused job board for blockchain, DeFi, exchanges, and onchain products. List a role, pay in
+        CryptoRecruit is a focused job board for blockchain, DeFi, exchanges, and onchain products. List a role, pay in
         crypto, and talk to people who already work in the space.
       </p>
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
