@@ -1,10 +1,13 @@
 import { XMLParser } from 'fast-xml-parser'
+import { stripEmptyBlocks } from '../shared/cleanHtml.js'
 import { filterAndSortJobs } from '../shared/jobSearch.js'
 import { getNextCompany, getNextJob, listAllNextJobs, listNextJobs } from './cjlNext.js'
 import { getPublishedExtraBySlug, listPublishedExtraJobs } from './extraJobs.js'
 
 const API_BASE = 'https://api.cryptojobslist.com'
 const CACHE_MS = 5 * 60 * 1000
+export const JOBS_PAGE_SIZE = 8
+const UPSTREAM_PAGE_SIZE = 25
 
 const FEEDS = {
   all: 'web3',
@@ -119,7 +122,7 @@ function stripHtml(html) {
 }
 
 function sanitizeHtml(html) {
-  return html
+  const cleaned = html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<img[^>]*webfeedsFeaturedVisual[^>]*>/gi, '')
@@ -127,6 +130,7 @@ function sanitizeHtml(html) {
     .replace(/\son\w+="[^"]*"/gi, '')
     .replace(/\son\w+='[^']*'/gi, '')
     .replace(/javascript:/gi, '')
+  return stripEmptyBlocks(cleaned)
 }
 
 function daysAgo(dateValue) {
@@ -357,7 +361,7 @@ export function companiesFrom(jobs) {
 function pageSize(params = {}) {
   if (params.paginate === false) return 0
   const raw = Number(params.limit)
-  return Math.min(50, Math.max(1, Number.isFinite(raw) && raw > 0 ? raw : 25))
+  return Math.min(50, Math.max(1, Number.isFinite(raw) && raw > 0 ? raw : JOBS_PAGE_SIZE))
 }
 
 function extraJobsFor(params = {}) {
@@ -385,7 +389,7 @@ function paginateJobs(jobs, params = {}, meta = {}) {
         catalogSize: meta.catalogSize || totalCount,
         page: 1,
         totalPages: 1,
-        limit: totalCount || 25,
+        limit: totalCount || JOBS_PAGE_SIZE,
       },
     }
   }
@@ -443,11 +447,47 @@ function finalizeJobs(payload, params = {}) {
   }
 }
 
+async function listLivePage(params = {}) {
+  const limit = pageSize(params)
+  const page = Math.max(1, Number(params.page || 1))
+  const extra = extraJobsFor(params)
+  if (!limit || limit === UPSTREAM_PAGE_SIZE) {
+    return listNextJobs(params)
+  }
+
+  const needFromLive = page <= 1 ? Math.max(0, limit - extra.length) : limit
+  const liveOffset = page <= 1 ? 0 : (page - 1) * limit - extra.length
+  const startPage = Math.floor(Math.max(0, liveOffset) / UPSTREAM_PAGE_SIZE) + 1
+  const endPage = Math.floor(Math.max(0, liveOffset + needFromLive - 1) / UPSTREAM_PAGE_SIZE) + 1
+  const payloads = []
+  for (let nextPage = startPage; nextPage <= endPage; nextPage += 1) {
+    payloads.push(await listNextJobs({ ...params, page: nextPage }))
+  }
+  const liveJobs = payloads.flatMap((payload) => payload.jobs || [])
+  const start = liveOffset - (startPage - 1) * UPSTREAM_PAGE_SIZE
+  const slice = liveJobs.slice(Math.max(0, start), Math.max(0, start) + needFromLive)
+  const jobs = (page <= 1 ? prependExtras(slice, extra) : slice).slice(0, limit)
+  const first = payloads[0] || { meta: {} }
+  const totalCount = Number(first.meta?.totalCount || liveJobs.length) + extra.length
+  return {
+    ...first,
+    jobs,
+    companies: companiesFrom(jobs),
+    meta: {
+      ...(first.meta || {}),
+      totalCount,
+      page,
+      totalPages: Math.max(1, Math.ceil(totalCount / limit)),
+      limit,
+    },
+  }
+}
+
 export async function listJobs(params = {}) {
   try {
     const query = String(params.query || '').trim()
     const wantsAll = params.paginate === false || Boolean(query)
-    const payload = wantsAll ? await listAllNextJobs(params) : await listNextJobs(params)
+    const payload = wantsAll ? await listAllNextJobs(params) : await listLivePage(params)
     const jobs = wantsAll ? filterAndSortJobs(payload.jobs, params) : payload.jobs
     return finalizeJobs(
       {

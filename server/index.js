@@ -112,7 +112,7 @@ app.get('/api/jobs', async (req, res) => {
       remote: req.query.remote === '1' || req.query.remote === 'true',
       sort: req.query.sort || 'recent',
       page: Number(req.query.page || 1),
-      limit: Number(req.query.limit || 25),
+      limit: Number(req.query.limit || 8),
     })
     res.json(payload)
   } catch (error) {

@@ -1,3 +1,5 @@
+import { stripEmptyBlocks } from '../shared/cleanHtml.js'
+
 const SITE = 'https://cryptojobslist.com'
 const DEFAULT_BUILD = process.env.CJL_NEXT_BUILD_ID || 'OL5siGC5aCOVJqUWUUDLV'
 const CACHE_MS = 3 * 60 * 1000
@@ -83,7 +85,7 @@ export function normalizeNextJob(raw, extras = {}) {
   const salary = salaryDisplay(raw)
   const company = raw.companyName || raw.company?.name || 'Unknown'
   const slug = raw.seoSlug || extras.slug || ''
-  const html = extras.html || raw.jobDescription || ''
+  const html = stripEmptyBlocks(extras.html || raw.jobDescription || '')
   const job = {
     id: raw.id || slug,
     slug,
@@ -343,7 +345,7 @@ function payloadFromProps(props, page) {
       totalCount: meta.totalCount || jobs.length,
       page: meta.page || page,
       totalPages: meta.totalPages || 1,
-      limit: meta.limit || 25,
+      limit: meta.limit || 8,
       updatedAt: meta.updatedAt,
       keyword: props.page?.keyword || 'Crypto',
     },

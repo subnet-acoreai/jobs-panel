@@ -48,7 +48,7 @@ export default function JobPreview({ job, variant = 'panel' }) {
       className={
         sheet
           ? 'flex h-full flex-col overflow-hidden bg-white dark:bg-night-card'
-          : 'flex h-[min(760px,calc(100vh-110px))] flex-col overflow-hidden rounded-[28px] border border-black/5 bg-white/90 shadow-[0_20px_50px_rgba(16,35,28,0.06)] dark:border-white/10 dark:bg-night-card'
+          : 'flex max-h-[calc(100vh-110px)] flex-col overflow-hidden rounded-[28px] border border-black/5 bg-white/90 shadow-[0_20px_50px_rgba(16,35,28,0.06)] dark:border-white/10 dark:bg-night-card'
       }
     >
       <div className={`border-b border-line dark:border-night-line ${sheet ? 'px-4 py-3' : 'px-5 py-5 sm:px-6'}`}>

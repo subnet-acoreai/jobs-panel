@@ -12,7 +12,7 @@ async function getJson(path) {
 export function JobsProvider({ children }) {
   const [jobs, setJobs] = useState([])
   const [companies, setCompanies] = useState([])
-  const [meta, setMeta] = useState({ totalCount: 0, page: 1, totalPages: 1, limit: 25 })
+  const [meta, setMeta] = useState({ totalCount: 0, page: 1, totalPages: 1, limit: 8 })
   const [source, setSource] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -36,7 +36,7 @@ export function JobsProvider({ children }) {
     setError('')
     try {
       const data = await getJson(`${url.pathname}${url.search}`)
-      const limit = Math.max(1, Number(data.meta?.limit || 25))
+      const limit = Math.max(1, Number(data.meta?.limit || 8))
       const incoming = data.jobs || []
       const nextJobs = !append && incoming.length > limit * 2 ? incoming.slice(0, limit) : incoming
       setJobs((prev) => {
@@ -50,7 +50,7 @@ export function JobsProvider({ children }) {
         const seen = new Set(prev.map((company) => company.slug))
         return [...prev, ...incoming.filter((company) => !seen.has(company.slug))]
       })
-      setMeta(data.meta || { totalCount: nextJobs.length, page: 1, totalPages: 1, limit: 25 })
+      setMeta(data.meta || { totalCount: nextJobs.length, page: 1, totalPages: 1, limit: 8 })
       setSource(data.source || '')
       setUpdatedAt(new Date())
       return data

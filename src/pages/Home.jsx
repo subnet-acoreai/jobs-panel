@@ -191,7 +191,7 @@ export default function Home() {
   }
 
   const totalCount = meta.totalCount || visible.length
-  const limit = meta.limit || 25
+  const limit = meta.limit || 8
   const currentPage = meta.page || page
   const totalPages = meta.totalPages || 1
   const viewed = Math.min(Math.max(visible.length, currentPage * limit), totalCount || visible.length)

@@ -1,4 +1,4 @@
-export function cleanJobHtml(html) {
+export function cleanJobHtml(html, { keepEmpty = false } = {}) {
   let out = String(html || '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -25,5 +25,21 @@ export function cleanJobHtml(html) {
     return `<${name}>`
   })
 
-  return out.replace(/<\/?span\b[^>]*>/gi, '').replace(/<\/?font\b[^>]*>/gi, '')
+  out = out.replace(/<\/?span\b[^>]*>/gi, '').replace(/<\/?font\b[^>]*>/gi, '')
+  return keepEmpty ? out.trim() : stripEmptyBlocks(out)
+}
+
+export function stripEmptyBlocks(html) {
+  let out = String(html || '')
+  for (let i = 0; i < 8; i += 1) {
+    const next = out
+      .replace(/<p>(\s|<br\s*\/?>|&nbsp;|&#160;)*<\/p>/gi, '')
+      .replace(/<div>(\s|<br\s*\/?>|&nbsp;|&#160;)*<\/div>/gi, '')
+      .replace(/<h[1-6]>(\s|<br\s*\/?>|&nbsp;|&#160;)*<\/h[1-6]>/gi, '')
+      .replace(/<li>(\s|<br\s*\/?>|&nbsp;|&#160;|<p>\s*<\/p>)*<\/li>/gi, '')
+      .replace(/<(ul|ol)>(\s)*<\/\1>/gi, '')
+    if (next === out) break
+    out = next
+  }
+  return out.trim()
 }

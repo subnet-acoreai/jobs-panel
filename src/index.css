@@ -89,6 +89,16 @@ button {
   height: auto;
 }
 
+.prose-job:not(.html-editor) p:empty,
+.prose-job:not(.html-editor) div:empty,
+.prose-job:not(.html-editor) li:empty,
+.prose-job:not(.html-editor) h2:empty,
+.prose-job:not(.html-editor) h3:empty,
+.prose-job:not(.html-editor) p:has(> br:only-child),
+.prose-job:not(.html-editor) div:has(> br:only-child) {
+  display: none;
+}
+
 .prose-job table {
   display: block;
   max-width: 100%;

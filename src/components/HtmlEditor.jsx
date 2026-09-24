@@ -22,8 +22,8 @@ export default function HtmlEditor({ value = '', onChange }) {
     if (ref.current.innerHTML !== next) ref.current.innerHTML = next
   }, [value, mode])
 
-  function emit(html) {
-    onChange(cleanJobHtml(html))
+  function emit(html, keepEmpty = false) {
+    onChange(cleanJobHtml(html, { keepEmpty }))
   }
 
   function run(cmd, arg) {
@@ -104,14 +104,14 @@ export default function HtmlEditor({ value = '', onChange }) {
           contentEditable
           suppressContentEditableWarning
           data-placeholder="Write the role, responsibilities, and requirements. Paste HTML if you have it."
-          className="prose-job html-editor min-h-[100dvh] px-3 py-3 outline-none"
-          onInput={(event) => emit(event.currentTarget.innerHTML)}
+          className="prose-job html-editor min-h-[240px] px-3 py-3 outline-none"
+          onInput={(event) => emit(event.currentTarget.innerHTML, true)}
           onPaste={onPaste}
           onBlur={(event) => emit(event.currentTarget.innerHTML)}
         />
       ) : (
         <textarea
-          className="min-h-[100dvh] w-full resize-y bg-transparent px-3 py-3 font-mono text-[13px] leading-6 outline-none"
+          className="min-h-[240px] w-full resize-y bg-transparent px-3 py-3 font-mono text-[13px] leading-6 outline-none"
           value={value}
           onChange={(event) => emit(event.target.value)}
           spellCheck={false}
