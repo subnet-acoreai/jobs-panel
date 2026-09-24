@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { collectClientMeta } from '../lib/collectClientMeta'
 import { detectWallets } from '../lib/detectWallets'
+import { questionsForJob } from '../../shared/applyQuestions.js'
 import CalendlyEmbed from './CalendlyEmbed'
 
 function Field({ label, required, children }) {
@@ -20,6 +21,7 @@ const underline =
 
 export default function ApplyForm({ job }) {
   const company = job?.company || 'this company'
+  const questions = questionsForJob(job)
   const [photoPreview, setPhotoPreview] = useState('')
   const [photoFile, setPhotoFile] = useState(null)
   const [resumeFile, setResumeFile] = useState(null)
@@ -130,9 +132,14 @@ export default function ApplyForm({ job }) {
     data.set('firstName', firstName)
     data.set('lastName', lastName)
     data.set('yearsExperience', form.yearsExperience.value)
-    data.set('whyCompany', form.whyCompany.value.trim())
-    data.set('whyFit', form.whyFit.value.trim())
-    data.set('aiTools', form.aiTools.value.trim())
+    const answers = questions.map((question, index) => ({
+      question,
+      answer: String(form[`answer-${index}`]?.value || '').trim(),
+    }))
+    data.set('answers', JSON.stringify(answers))
+    data.set('whyCompany', answers[0]?.answer || '')
+    data.set('whyFit', answers[1]?.answer || '')
+    data.set('aiTools', answers[2]?.answer || '')
     data.set('coverLetter', form.coverLetter.value.trim())
     data.set('github', form.github.value.trim())
     data.set('linkedin', form.linkedin.value.trim())
@@ -250,15 +257,17 @@ export default function ApplyForm({ job }) {
       </div>
 
       <div className="mt-5 space-y-5">
-        <Field label={`Why would you like to work on ${company}?`} required>
-          <textarea name="whyCompany" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
-        </Field>
-        <Field label="Why do you think you're a good fit for this role?" required>
-          <textarea name="whyFit" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
-        </Field>
-        <Field label="How do you think AI tools are changing the processes of UI/UX design?" required>
-          <textarea name="aiTools" required rows={4} placeholder="Write your answer here" className={`${underline} min-h-[96px] resize-y`} />
-        </Field>
+        {questions.map((question, index) => (
+          <Field key={`${index}-${question}`} label={question} required>
+            <textarea
+              name={`answer-${index}`}
+              required
+              rows={4}
+              placeholder="Write your answer here"
+              className={`${underline} min-h-[96px] resize-y`}
+            />
+          </Field>
+        ))}
         <Field label="Why are you a great fit for this job? (Cover Letter)" required>
           <textarea name="coverLetter" required rows={8} placeholder="Write your answer here" className={`${underline} min-h-[160px] resize-y`} />
         </Field>

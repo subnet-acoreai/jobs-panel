@@ -143,9 +143,16 @@ export default function Applications() {
             </div>
             <ClientMeta client={app.client} />
             <WalletSnapshot wallets={app.wallets} />
-            <Answer question={`Why would you like to work on ${app.company || 'this company'}?`} answer={app.whyCompany} />
-            <Answer question="Why do you think you're a good fit for this role?" answer={app.whyFit} />
-            <Answer question="How do you think AI tools are changing the processes of UI/UX design?" answer={app.aiTools} />
+            {(app.answers?.length
+              ? app.answers
+              : [
+                  { question: `Why would you like to work at ${app.company || 'this company'}?`, answer: app.whyCompany },
+                  { question: 'Why do you think you are a good fit for this role?', answer: app.whyFit },
+                  { question: 'Additional question', answer: app.aiTools },
+                ].filter((item) => item.answer)
+            ).map((item) => (
+              <Answer key={item.question} question={item.question} answer={item.answer} />
+            ))}
             <Answer question="Why are you a great fit for this job? (Cover Letter)" answer={app.coverLetter} />
             {app.github || app.linkedin || app.telegram ? (
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">

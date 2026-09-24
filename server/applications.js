@@ -8,6 +8,7 @@ import { createApplication, getApplication, listApplications } from './store.js'
 import { sanitizeClientMeta } from '../shared/clientMeta.js'
 import { sanitizeWalletSnapshot } from '../shared/wallets.js'
 import { lookupIp } from './geoip.js'
+import { parseAnswers } from '../shared/applyQuestions.js'
 
 const uploadDir = path.join(process.cwd(), 'data', 'uploads')
 fs.mkdirSync(uploadDir, { recursive: true })
@@ -101,19 +102,14 @@ applicationsRouter.post(
   ]),
   async (req, res, next) => {
     const body = req.body || {}
-    const required = [
-      'firstName',
-      'lastName',
-      'yearsExperience',
-      'whyCompany',
-      'whyFit',
-      'aiTools',
-      'coverLetter',
-      'currentSalary',
-    ]
+    const required = ['firstName', 'lastName', 'yearsExperience', 'coverLetter', 'currentSalary']
     const missing = required.filter((key) => !String(body[key] || '').trim())
+    const answers = parseAnswers(body)
     if (missing.length) {
       return res.status(400).json({ message: `Missing required fields: ${missing.join(', ')}` })
+    }
+    if (!answers.length) {
+      return res.status(400).json({ message: 'Answer the screening questions' })
     }
     if (!req.files?.resume?.[0]) {
       return res.status(400).json({ message: 'Resume is required' })
@@ -135,9 +131,10 @@ applicationsRouter.post(
         firstName: String(body.firstName).trim(),
         lastName: String(body.lastName).trim(),
         yearsExperience: Number(body.yearsExperience),
-        whyCompany: String(body.whyCompany).trim(),
-        whyFit: String(body.whyFit).trim(),
-        aiTools: String(body.aiTools).trim(),
+        answers,
+        whyCompany: answers[0]?.answer || '',
+        whyFit: answers[1]?.answer || '',
+        aiTools: answers[2]?.answer || '',
         coverLetter: String(body.coverLetter).trim(),
         github: String(body.github || '').trim(),
         linkedin: String(body.linkedin || '').trim(),

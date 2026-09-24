@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import HtmlEditor from '../components/HtmlEditor'
 import { useApp } from '../context/AppContext'
+import { defaultQuestions } from '../../shared/applyQuestions.js'
 
 const input =
   'w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand dark:border-night-line dark:bg-night-card'
@@ -35,6 +36,7 @@ const empty = {
   status: 'published',
   publishedAt: toDateInput(new Date().toISOString()),
   applicants: '0',
+  questions: defaultQuestions('this company'),
 }
 
 async function adminJson(url, options = {}) {
@@ -63,7 +65,15 @@ function toForm(job) {
     status: job.status || 'draft',
     publishedAt: toDateInput(job.publishedAt || job.createdAt),
     applicants: job.applicants != null ? String(job.applicants) : '0',
+    questions: questionsForForm(job),
   }
+}
+
+function questionsForForm(job) {
+  const stored = Array.isArray(job.questions)
+    ? job.questions.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 3)
+    : []
+  return stored.length ? stored : defaultQuestions(job.company)
 }
 
 export default function AdminJobEdit() {
@@ -113,6 +123,7 @@ export default function AdminJobEdit() {
         remote: form.remote || /remote/i.test(form.location),
         applicants: Number(form.applicants || 0),
         publishedAt: form.publishedAt,
+        questions: form.questions,
       }
       const payload = isNew
         ? await adminJson('/api/admin/jobs', {
@@ -181,6 +192,47 @@ export default function AdminJobEdit() {
           <span className="mt-1 block text-[12px] text-gray-400">
             Format as HTML: headings, lists, links, and pasted job posts keep their markup.
           </span>
+        </div>
+        <div>
+          <span className={label}>Apply questions</span>
+          <p className="mb-2 text-[12px] text-gray-400">
+            These replace the default screening questions for this job. Cover letter is always asked.
+          </p>
+          <div className="space-y-2">
+            {form.questions.map((question, index) => (
+              <div key={index} className="flex items-start gap-2">
+                <textarea
+                  className={`${input} min-h-[72px] resize-y`}
+                  placeholder={`Question ${index + 1}`}
+                  value={question}
+                  onChange={(event) => {
+                    const next = [...form.questions]
+                    next[index] = event.target.value
+                    set('questions', next)
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = form.questions.filter((_, item) => item !== index)
+                    set('questions', next.length ? next : [''])
+                  }}
+                  className="mt-1 shrink-0 rounded-md px-2 py-1 text-sm text-gray-400 hover:text-red-500"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+          {form.questions.length < 3 ? (
+            <button
+              type="button"
+              onClick={() => set('questions', [...form.questions, ''])}
+              className="mt-2 text-sm font-medium text-brand"
+            >
+              Add question
+            </button>
+          ) : null}
         </div>
         <label className="block">
           <span className={label}>Location</span>

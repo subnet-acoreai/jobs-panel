@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { cleanJobHtml } from '../shared/cleanHtml.js'
+import { normalizeQuestions } from '../shared/applyQuestions.js'
 import { requireAdmin } from './auth.js'
 
 const FILE = path.join(process.cwd(), 'data', 'extra-jobs.json')
@@ -164,6 +165,7 @@ function shapeInput(body, existing = {}, all = []) {
     slug: uniqueSlug(`${title}-at-${company}`, all, existing.id),
     applicants: parseApplicants(body.applicants, existing.applicants),
     publishedAt: parsePostedAt(body.publishedAt ?? body.postedAt, existing.publishedAt),
+    questions: normalizeQuestions(body.questions ?? { q1: body.q1, q2: body.q2, q3: body.q3 }, company),
   }
 }
 
@@ -202,6 +204,7 @@ export function extraJobToPublic(job) {
     canonicalURL: `/jobs/${job.slug}`,
     source: 'extra',
     calendlyUrl: job.calendlyUrl || '',
+    questions: normalizeQuestions(job.questions, job.company),
   }
 }
 
@@ -245,6 +248,7 @@ function fromLiveJob(live) {
     logo: live.logo || '',
     applicants: Number(live.applicants || 0),
     publishedAt: live.publishedAt || '',
+    questions: normalizeQuestions(live.questions, live.company),
   }
 }
 

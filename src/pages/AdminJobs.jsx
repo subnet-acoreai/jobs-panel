@@ -116,6 +116,10 @@ export default function AdminJobs() {
             </div>
             <p className="mt-2 break-all text-xs text-gray-400">
               {job.calendlyUrl ? `Calendly: ${job.calendlyUrl}` : 'No Calendly link'}
+              {' · '}
+              {Array.isArray(job.questions) && job.questions.length
+                ? `${job.questions.length} apply question${job.questions.length === 1 ? '' : 's'}`
+                : 'Default apply questions'}
             </p>
             <div className="mt-3 flex flex-wrap gap-3 text-sm">
               <Link to={`/admin/jobs/${job.id}`} className="font-medium text-brand">
