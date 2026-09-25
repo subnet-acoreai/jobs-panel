@@ -200,7 +200,7 @@ export default function Home() {
   return (
     <div className="mesh-hero mx-auto flex w-full min-w-0 max-w-[1200px] flex-1 flex-col px-3 pt-3 sm:px-5 sm:pb-12 sm:pt-8 max-lg:min-h-0 max-lg:overflow-hidden max-lg:pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:h-auto lg:overflow-visible">
       <div className="shrink-0">
-        <p className="inline-flex rounded-full bg-accent px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink">
+        <p className="inline-flex rounded-full bg-brand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">
           {BRAND_NAME}
         </p>
         <h1 className="mt-2 max-w-3xl text-[24px] font-extrabold leading-[1.08] tracking-tight sm:mt-4 sm:text-[48px]">

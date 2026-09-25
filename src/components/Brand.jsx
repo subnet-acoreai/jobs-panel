@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 
 export const BRAND_NAME = 'CryptoRecruit'
+export const BRAND_LOGO = '/logo.png'
 
-export function Logo({ className = 'h-8 w-8' }) {
+export function Logo({ className = 'h-10 w-auto', alt = BRAND_NAME }) {
   return (
-    <svg className={className} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="#0D9F7A" />
-      <path
-        d="M22.8 9.15A8.9 8.9 0 0 0 16 6.6c-5.3 0-9.4 4.2-9.4 9.4s4.1 9.4 9.4 9.4c2.8 0 5.3-1.2 7.1-3.2l-2.55-2.05A5.95 5.95 0 0 1 16 22.15c-3.4 0-6.05-2.7-6.05-6.15S12.6 9.85 16 9.85c1.55 0 2.95.55 4 1.5l2.8-2.2z"
-        fill="#D4F562"
-      />
-    </svg>
+    <img
+      src={BRAND_LOGO}
+      alt={alt}
+      className={`object-contain ${className}`}
+      width={180}
+      height={180}
+      decoding="async"
+    />
   )
 }
 
@@ -127,7 +129,7 @@ export function CompanyLogo({ company, logo, name, size = 40 }) {
       style={{
         width: size,
         height: size,
-        background: company?.color || '#0D9F7A',
+        background: company?.color || '#0084FF',
         fontSize: size * 0.42,
       }}
       aria-hidden="true"

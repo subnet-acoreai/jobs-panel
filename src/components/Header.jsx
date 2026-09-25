@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { BrandWordmark, Logo } from './Brand'
+import { Logo } from './Brand'
 import { useApp } from '../context/AppContext'
 
 const nav = [
@@ -35,9 +35,8 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 w-full min-w-0 px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3">
       <div className="mx-auto flex h-14 w-full min-w-0 max-w-[1200px] items-center justify-between gap-1.5 rounded-2xl border border-black/5 bg-white/80 px-2 shadow-[0_8px_30px_rgba(16,35,28,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-night-card/90 sm:h-[58px] sm:gap-3 sm:px-4">
-        <Link to="/" className="flex min-w-0 shrink items-center gap-1.5 text-[13px] font-extrabold tracking-tight text-ink dark:text-white sm:gap-2 sm:text-[16px]">
-          <Logo className="h-7 w-7 shrink-0 sm:h-8 sm:w-8" />
-          <BrandWordmark className="truncate" />
+        <Link to="/" className="flex min-w-0 shrink items-center rounded-lg bg-black px-1 py-0.5">
+          <Logo className="h-10 w-auto max-w-[168px] rounded-md sm:h-11 sm:max-w-[200px]" alt="CryptoRecruit" />
         </Link>
 
         <nav className="hidden items-center gap-0.5 lg:flex">
@@ -100,13 +99,6 @@ export default function Header() {
               </Link>
             </>
           ) : null}
-          <Link
-            to="/hire"
-            className="inline-flex min-h-9 items-center rounded-full bg-brand px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-hover sm:px-3.5 sm:text-[13px]"
-          >
-            <span className="sm:hidden">Post</span>
-            <span className="hidden sm:inline">Post a job</span>
-          </Link>
 
           <button
             type="button"

@@ -343,7 +343,7 @@ export function companiesFrom(jobs) {
       name: job.company,
       logo: job.logo,
       letter: job.company?.[0] || 'C',
-      color: '#0D9F7A',
+      color: '#0084FF',
       location: job.remote ? 'Remote' : job.location,
       tags: [],
       tagline: job.summary,

@@ -331,7 +331,7 @@ function payloadFromProps(props, page) {
           name: job.company,
           logo: job.logo,
           letter: job.company?.[0] || 'C',
-          color: '#0D9F7A',
+          color: '#0084FF',
           location: job.remote ? 'Remote' : job.location,
           open: 1,
         })
@@ -449,7 +449,7 @@ export function normalizeNextCompany(raw, extras = {}) {
     name: raw.name || 'Unknown',
     logo: raw.logo || '',
     letter: (raw.name || 'C')[0],
-    color: '#0D9F7A',
+    color: '#0084FF',
     location: locationLabel(raw.location) || extras.location || '',
     about,
     html: raw.markedAbout || (about ? `<p>${about}</p>` : ''),

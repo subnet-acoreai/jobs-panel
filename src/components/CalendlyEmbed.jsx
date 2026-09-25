@@ -15,13 +15,13 @@ function isCalendly(url) {
 function embedUrl(url, dark) {
   const parsed = new URL(url)
   parsed.searchParams.set('hide_gdpr_banner', '1')
-  parsed.searchParams.set('primary_color', '0d9f7a')
+  parsed.searchParams.set('primary_color', '0084ff')
   if (dark) {
-    parsed.searchParams.set('background_color', '0d2219')
-    parsed.searchParams.set('text_color', 'e8f5ee')
+    parsed.searchParams.set('background_color', '0b1730')
+    parsed.searchParams.set('text_color', 'e8f1fb')
   } else {
     parsed.searchParams.set('background_color', 'ffffff')
-    parsed.searchParams.set('text_color', '10231c')
+    parsed.searchParams.set('text_color', '061b36')
   }
   return parsed.toString()
 }

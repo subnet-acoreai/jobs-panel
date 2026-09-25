@@ -847,7 +847,7 @@ export const talent = [
     location: 'Singapore',
     availability: 'Available now',
     skills: ['Solidity', 'Foundry', 'DeFi', 'Security'],
-    color: '#0D9F7A',
+    color: '#0084FF',
     blurb: '6 years shipping production contracts for lending and perps protocols. Audit-friendly, low-ego.',
   },
   {
