@@ -35,7 +35,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 w-full min-w-0 px-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-3">
       <div className="mx-auto flex h-14 w-full min-w-0 max-w-[1200px] items-center justify-between gap-1.5 rounded-2xl border border-black/5 bg-white/80 px-2 shadow-[0_8px_30px_rgba(16,35,28,0.06)] backdrop-blur-xl dark:border-white/10 dark:bg-night-card/90 sm:h-[58px] sm:gap-3 sm:px-4">
-        <Link to="/" className="flex min-w-0 shrink items-center rounded-lg bg-black px-1 py-0.5">
+        <Link to="/" className="flex min-w-0 shrink items-center rounded-lg bg-none px-1 py-0.5">
           <Logo className="h-10 w-auto max-w-[168px] rounded-md sm:h-11 sm:max-w-[200px]" alt="CryptoRecruit" />
         </Link>
 
